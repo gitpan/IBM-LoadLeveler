@@ -22,6 +22,7 @@ print CMD << "EOF";
 #!/bin/sh
 #
 #@ job_name = perl-loadleveler-test
+#@ wall_clock_limit = 1:00
 #@ queue
 
 #

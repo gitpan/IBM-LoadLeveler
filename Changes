@@ -1,11 +1,29 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+1.00  Tue Jan 06 10:13:00 2004
+	- Added support for LoadLeveler 3.2
+		- LL_CLASS_* in Data Access API
+		- Extra arguments to ll_modify
+	- using lslpp in Makefile to work out a version number
+	- More examples from Mark Roberts (mark.roberts@awe.co.uk)
+
+1.00  Fri Aug 29 15:34:00 2003
+	- Added QUERY_PROCID parameter from APAR IY35212
+		(Currently broken see APAR IY48329)
+	- Added SYSTEM_PREEMPT_STEP from APAR IY37022
+	- Fixed some problems with 64 bit compile
+
+0.08  Mon Jun 09 16:18:00 2003
+	- Split documentation into sections for easier maintenance
+	- Removed some of the more innovative spellings
+	- Added example of monitor program in Submit.pod
+
 0.07  Tue Mar 18 09:44:00 2003
 	- Changed module name from LoadLeveler to IBM::LoadLeveler for CPAN
 
 0.06  Thu Mar 06 16:16:00 2003
 	- Added Notes on Core dumps with large history files and solution 
-	  contributed by Dr Peter Mayes (peter_mayes@uk.ibm.com ) 
+	  contributed by Dr Peter Mayes (peter_mayes@uk.ibm.com) 
 	  and Mark Roberts (mark.roberts@awe.co.uk)
 	- Modified documentation
 

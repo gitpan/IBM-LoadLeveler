@@ -1,0 +1,168 @@
+# -*- Perl -*-
+=pod
+
+=head1 NAME
+
+IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
+
+=head1 SYNOPSIS
+
+  use IBM::LoadLeveler;
+
+  $version = ll_version();
+
+  # Workload Management API
+
+  $rc=ll_control($control_op,\@host_list,\@user_list,\@job_list,\@class_list,$priority);
+
+  $rc=llctl(LL_CONTROL_START|LL_CONTROL_STOP|LL_CONTROL_RECYCLE|\
+		LL_CONTROL_RECONFIG|LL_CONTROL_DRAIN|LL_CONTROL_DRAIN_SCHEDD|\
+		LL_CONTROL_DRAIN_STARTD|LL_CONTROL_FLUSH|LL_CONTROL_PURGE_SCHEDD|\
+		LL_CONTROL_SUSPEND|LL_CONTROL_RESUME|LL_CONTROL_RESUME_STARTD|\
+		LL_CONTROL_RESUME_SCHEDD,\@host_list,\@class_list);
+
+  $rc=llfavorjob(LL_CONTROL_FAVOR_JOB|LL_CONTROL_UNFAVOR_JOB,\@job_list);
+
+  $rc=llfavoruser(LL_CONTROL_FAVOR_USER|LL_CONTROL_UNFAVOR_USER,\@user_list);
+
+  $rc=llhold(LL_CONTROL_HOLD_USER|LL_CONTROL_HOLD_SYSTEM|LL_CONTROL_HOLD_RELEASE,\@host_list,\@user_list,\@job_list);
+
+  rc=llprio(LL_CONTROL_PRIO_ABS|LL_CONTROL_PRIO_ADJ,\@job_list,$priority);
+
+  $rc=ll_start_job($cluster,$proc,$from_host,\@node_list);
+  $rc=ll_terminate_job($cluster,$proc,$from_host,$msg);
+  ($rc,$errObj)=ll_preempt($job_step_id, PREEMPT_STEP|RESUME_STEP);
+
+ ($rc,err_obj)=ll_modify(EXECUTION_FACTOR|CONSUMABLE_CPUS|CONSUMABLE_MEMORY|WCLIMIT_ADD_MIN|JOB_CLASS|ACCOUNT_NO,\$value,$job_step);
+
+  # Error API
+
+  ll_error($errObj,1 | 2 );
+
+  # Submit API function
+
+  ($job_name,$owner,$groupname,$uid,$gid,$submit_host,$numsteps,$ref)=llsubmit($job_cmd_file,$monitor_program,$monitor_args);
+
+  # Data Access API functions
+
+  $query = ll_query( JOBS|MACHINES|CLUSTER|WLMSTAT|MATRIX );
+
+  $return = ll_set_request( $query,QUERY_ALL|QUERY_JOBID|QUERY_STEPID|\
+		QUERY_GROUP|QUERY_CLASS|QUERY_HOST|QUERY_STARTDATE|\
+		QUERY_ENDDATE|QUERY_PROCID,\
+		 \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
+
+  $object = ll_get_objs( $query, LL_STARTED|LL_SCHEDD|LL_CM|LL_MASTER|\
+		LL_STARTER|LL_HISTORY_FILE, $hostname, $number_of_objs, $error_code);
+
+  $return = ll_reset_request( $object );
+
+  $next_object = ll_next_obj ( $object );
+
+  $return = ll_free_objs ( $object );
+
+  $return = ll_deallocate ( $object );
+
+  $result = ll_get_data( $object, $LLAPI_Specification );
+
+  # Query API functions ( deprecated )
+
+  my ($version_num,$numnodes,$noderef)=ll_get_nodes();
+
+  my ($version_num,$numjobs,$ref)=ll_get_jobs();
+
+=head1 DESCRIPTION
+
+This module provides access to the APIs of the IBM LoadLeveler Workload Management System.  The APIs currently implemented are:
+
+=over 4
+
+=item * L<Data Access|DataAccess>
+
+=item * L<Query|Query>
+
+=item * L<Submit|Submit>
+
+=item * L<Workload Management (partial)|Workload>
+
+=item * Error Handling
+
+=back
+
+This module is not for the faint hearted.  The LoadLeveler API returns a huge amount of information, the ll_get_data call has over 300 different specifications that can be supplied.  To use this module you really need a copy of the the IBM documentation on using LoadLeveler and maybe a copy of the llapi.h header file.
+
+=head2 LoadLeveler Versions
+
+This version has only been tested with LoadLeveler 3.1.0.16 under AIX 5.1 and 3.2.0 under AIX 5.2.
+
+Since LoadLeveler 3.2 does not change the version number in the llapi.h file a crude hack is used to work out what version is installed and only include the appropriate functions and enum values.  If your compile starts spitting out errors like:
+
+ "LoadLeveler.xs", line 3459.22: 1506-045 (S) Undeclared identifier WCLIMIT_ADD_MIN.
+ "LoadLeveler.xs", line 3459.22: 1506-051 (S) Case expression must be a valid integral constant.
+
+Then the hack has probably not worked and you will either need to either fix the Makefile.PL file or hardcode a value for the LLVER variable:
+
+ 3.1 : 03010000
+ 3.2 : 03020000
+
+There is a fairly strong probability that since I tested using 3.1.0.16 there might be failures with previous versions.  If there is I would be grateful if you could send me, the outputs from the make command and:
+
+ lslpp -lc | grep LoadL
+
+=head2 64 bit types and 32 bit perl
+
+B<ll_get_data> has a whole set of 64 bit return types, this poses a problem for perl when it is compiled in 32 bit mode.  This module will return correct values if the value is than 2^31 otherwise the value will be truncated to 2^31..
+
+=head2 Build/Installation
+
+The module currently relies on the llapi.h file supplied with LoadLeveler for definitions of constants.  The make file automatically processes the llapi.h file into a llapi.ph file and installs it as part of the build process.
+
+You will probably need to edit Makefile.PL to change the value of $LoadL to point to where LoadLeveler is installed
+
+Standard build/installation supported by ExtUtils::MakeMaker(3)...
+
+        perl Makefile.PL
+        make
+        make test
+        make install
+
+To convert the pod documentation (what there is of it) to html:
+
+	make html
+
+=head1 Known Problems
+
+=head2 QUERY_PROCID
+
+See APAR IY48329
+
+This does not return some values, eg LL_StepState always returns 0.  If your scheduler type is GANG then you don't get any results at all.
+
+=head2 Large History files
+
+This module has been observed to crash when given a history file of >92MB and <132MB ( the killer value is probably 128MB ).
+
+B<Workaround>
+
+The solution is to increase the bmaxdata value of the Perl executable. If you are using the installp version of perl it is recommended to copy the executable to another directory, and modify using ldedit to increase the number of data segments.
+
+        cp /usr/opt/perl/bin/perl /global/bin/llperl
+        /usr/bin/ldedit -o bmaxdata:0x20000000 /global/bin/llperl
+
+Then modify any scripts that have exhibited this behaviour to use the new
+executable. If this fails then increase the bmaxdata value until successful.
+
+=head1 CREDITS
+
+I would like to thank Mark "Red Dwarf" Roberts for his extensive assistance in making this module and for the large number of example programs he has provided.
+
+=head1 AUTHOR
+
+Mike Hawkins <Mike.Hawkins@awe.co.uk>
+
+=head1 SEE ALSO
+
+L<perl>.
+IBM LoadLeveler for AIX 5L: Using and Administering
+
+=cut

@@ -5,16 +5,7 @@
 
 #include <llapi.h>
 
-/* 
- * Macro to make code a bit more readable.
- * IV_MAX is the maximum that Perl can get into a scalar integer
- * This is basically checking a 64 bit value, and truncating it to 
- * 32 bits on a 32 bit compile.
- */
-
-#define CHECK64(a)	a > IV_MAX ? (long)IV_MAX : (long)a
-
-AV *
+AV * 
 unpack_ll_step_id(id)
     LL_STEP_ID *id;
 {
@@ -266,29 +257,29 @@ LL_job_step	*job_info;
 /*  void  **adapter_req;  adapter requirements - step->getFirstAdapterReq() ...  */
     
  
-    hv_store(step,"image_size64",strlen("image_size64"),(newSViv(CHECK64(job_info->image_size64))),0);
-    hv_store(step,"exec_size64",strlen("exec_size64"),(newSViv(CHECK64(job_info->exec_size64))),0);
-    hv_store(step,"virtual_memory_requested64",strlen("virtual_memory_requested64"),(newSViv(CHECK64(job_info->virtual_memory_requested64))),0);
-    hv_store(step,"memory_requested64",strlen("memory_requested64"),(newSViv(CHECK64(job_info->memory_requested64))),0);
+    hv_store(step,"image_size64",strlen("image_size64"),(newSViv(job_info->image_size64)),0);
+    hv_store(step,"exec_size64",strlen("exec_size64"),(newSViv(job_info->exec_size64)),0);
+    hv_store(step,"virtual_memory_requested64",strlen("virtual_memory_requested64"),(newSViv(job_info->virtual_memory_requested64)),0);
+    hv_store(step,"memory_requested64",strlen("memory_requested64"),(newSViv(job_info->memory_requested64)),0);
     limits64=(AV *)sv_2mortal((SV *)newAV());
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.cpu_hard_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.cpu_soft_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.data_hard_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.data_soft_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.core_hard_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.core_soft_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.file_hard_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.file_soft_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.rss_hard_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.rss_soft_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.stack_hard_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.stack_soft_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.hard_cpu_step_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.soft_cpu_step_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.hard_wall_clock_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.soft_wall_clock_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.ckpt_time_hard_limit)));
-    av_push(limits64,newSViv(CHECK64(job_info->limits64.ckpt_time_soft_limit)));
+    av_push(limits64,newSViv(job_info->limits64.cpu_hard_limit));
+    av_push(limits64,newSViv(job_info->limits64.cpu_soft_limit));
+    av_push(limits64,newSViv(job_info->limits64.data_hard_limit));
+    av_push(limits64,newSViv(job_info->limits64.data_soft_limit));
+    av_push(limits64,newSViv(job_info->limits64.core_hard_limit));
+    av_push(limits64,newSViv(job_info->limits64.core_soft_limit));
+    av_push(limits64,newSViv(job_info->limits64.file_hard_limit));
+    av_push(limits64,newSViv(job_info->limits64.file_soft_limit));
+    av_push(limits64,newSViv(job_info->limits64.rss_hard_limit));
+    av_push(limits64,newSViv(job_info->limits64.rss_soft_limit));
+    av_push(limits64,newSViv(job_info->limits64.stack_hard_limit));
+    av_push(limits64,newSViv(job_info->limits64.stack_soft_limit));
+    av_push(limits64,newSViv(job_info->limits64.hard_cpu_step_limit));
+    av_push(limits64,newSViv(job_info->limits64.soft_cpu_step_limit));
+    av_push(limits64,newSViv(job_info->limits64.hard_wall_clock_limit));
+    av_push(limits64,newSViv(job_info->limits64.soft_wall_clock_limit));
+    av_push(limits64,newSViv(job_info->limits64.ckpt_time_hard_limit));
+    av_push(limits64,newSViv(job_info->limits64.ckpt_time_soft_limit));
     hv_store(step,"limits64",strlen("limits64"),newRV((SV *)limits64),0);
     
     hv_store(step,"good_ckpt_start_time",strlen("good_ckpt_start_time"),(newSViv((long)job_info->good_ckpt_start_time)),0);
@@ -414,9 +405,9 @@ LL_node    *node;
     }
     av_push(array,newRV((SV *)list));
 
-    av_push(array,newSViv(CHECK64(node->virtual_memory64)));
-    av_push(array,newSViv(CHECK64(node->memory64)));
-    av_push(array,newSViv(CHECK64(node->disk64)));
+    av_push(array,newSViv(node->virtual_memory64));
+    av_push(array,newSViv(node->memory64));
+    av_push(array,newSViv(node->disk64));
     return(array);
 }
 
@@ -2821,7 +2812,6 @@ not_there:
     return 0;
 }
 
-
 MODULE = IBM::LoadLeveler		PACKAGE = IBM::LoadLeveler
 
 double
@@ -2894,6 +2884,15 @@ ll_get_data(object,Specification)
 	PPCODE:
 	{	switch (Specification)
 		{
+#if LLVER >= 03020000
+		case LL_AdapterUsageDevice:
+		case LL_ClassName:
+		case LL_ClassNqsSubmit:
+		case LL_ClassComment:
+		case LL_ClassCkptDir:
+		case LL_ClassPreemptClass:
+		case LL_ClassStartClass:
+#endif
 		case LL_JobManagementInteractiveClass:
 		case LL_JobManagementAccountNo:
         	case LL_JobName:
@@ -2964,6 +2963,14 @@ ll_get_data(object,Specification)
 			    XSRETURN_UNDEF;
 		    }
 		    break ;
+#if LLVER >= 03020000
+		case LL_ClassExcludeUsers: 
+		case LL_ClassIncludeUsers: 
+		case LL_ClassExcludeGroups: 
+		case LL_ClassIncludeGroups: 
+		case LL_ClassAdmin: 
+		case LL_ClassNqsQuery: 
+#endif
        		case LL_MachineAdapterList:
         	case LL_MachineAvailableClassList:
         	case LL_MachineFeatureList:
@@ -3048,6 +3055,26 @@ ll_get_data(object,Specification)
 			    XSRETURN_UNDEF;
 		    }
 		    break;
+#if LLVER >= 03020000
+		case LL_ClassCkptTimeHardLimit:
+		case LL_ClassCkptTimeSoftLimit:
+		case LL_ClassWallClockLimitHard:
+		case LL_ClassWallClockLimitSoft:
+		case LL_ClassCpuStepLimitHard:
+		case LL_ClassCpuStepLimitSoft:
+		case LL_ClassCpuLimitHard:
+		case LL_ClassCpuLimitSoft:
+		case LL_ClassDataLimitHard:
+		case LL_ClassDataLimitSoft:
+		case LL_ClassCoreLimitHard:
+		case LL_ClassCoreLimitSoft:
+		case LL_ClassFileLimitHard:
+		case LL_ClassFileLimitSoft:
+		case LL_ClassStackLimitHard:
+		case LL_ClassStackLimitSoft:
+		case LL_ClassRssLimitHard:
+		case LL_ClassRssLimitSoft:
+#endif
         	case LL_StepImageSize64:
 		case LL_StepCpuLimitHard64:
 		case LL_StepCpuLimitSoft64:
@@ -3183,18 +3210,54 @@ ll_get_data(object,Specification)
 			int     rc;
 
 		    	rc=ll_get_data(object,Specification,&value);
-		    	/* printf("%d = %lld\n",Specification,value); */
+/*		    	printf("%d = %lld\n",Specification,value);*/
 			if (rc >= 0)
 			{
-			    XPUSHs(sv_2mortal(newSViv(CHECK64(value))));
+			    XPUSHs(sv_2mortal(newSViv(value)));
 			    XSRETURN(1);
 			}
 			else
 			    XSRETURN_UNDEF;
 		    }
 		    break ;
-
-		default :
+		case LL_JobManagementPrinterFILE:
+		case LL_JobManagementRestorePrinter:
+		case LL_JobGetFirstStep:
+		case LL_JobGetNextStep:
+		case LL_JobCredential:
+		case LL_StepGetFirstNode:
+		case LL_StepGetNextNode:
+		case LL_StepGetFirstMachine:
+		case LL_StepGetNextMachine:
+		case LL_StepGetFirstSwitchTable:
+		case LL_StepGetNextSwitchTable:
+		case LL_StepGetMasterTask:
+		case LL_StepGetFirstAdapterReq:
+		case LL_StepGetNextAdapterReq:
+		case LL_StepGetFirstMachUsage:
+		case LL_StepGetNextMachUsage:
+		case LL_MachineGetFirstResource:
+		case LL_MachineGetNextResource:
+		case LL_MachineGetFirstAdapter:
+		case LL_MachineGetNextAdapter:
+		case LL_NodeGetFirstTask:
+		case LL_NodeGetNextTask:
+		case LL_TaskGetFirstTaskInstance:
+		case LL_TaskGetNextTaskInstance:
+		case LL_TaskGetFirstResourceRequirement:
+		case LL_TaskGetNextResourceRequirement:
+		case LL_TaskInstanceGetFirstAdapter:
+		case LL_TaskInstanceGetNextAdapter:
+		case LL_TaskInstanceGetFirstAdapterUsage:
+		case LL_TaskInstanceGetNextAdapterUsage:
+		case LL_ClusterGetFirstResource:
+		case LL_ClusterGetNextResource:
+		case LL_MatrixGetFirstColumn:
+		case LL_MatrixGetNextColumn:
+		case LL_MachUsageGetFirstDispUsage:
+		case LL_MachUsageGetNextDispUsage:
+		case LL_DispUsageGetFirstEventUsage:
+		case LL_DispUsageGetNextEventUsage:
 		    {
 			void *pointer;
 			int   rc;
@@ -3204,6 +3267,47 @@ ll_get_data(object,Specification)
 			if (rc >= 0)
 			{
 			    XPUSHs(sv_2mortal(newSViv((long)pointer)));
+			    XSRETURN(1);
+			}
+			else
+			    XSRETURN_UNDEF;
+
+		    }
+		    break ;
+		case LL_JobSubmitTime:
+		case LL_StepCompletionDate:
+		case LL_StepStartDate:
+		case LL_StepDispatchTime:
+		case LL_StepCkptFailStartTime:
+		case LL_StepCkptGoodElapseTime:
+		case LL_StepCkptGoodStartTime:
+		case LL_MachineTimeStamp:
+		    {
+			time_t time;
+			int   rc;
+
+		    	rc=ll_get_data(object,Specification,(void *)&time);
+		    	/*printf("%d = %ld\n",Specification,time); */
+			if (rc >= 0)
+			{
+			    XPUSHs(sv_2mortal(newSViv((long)time)));
+			    XSRETURN(1);
+			}
+			else
+			    XSRETURN_UNDEF;
+
+		    }
+		    break ;
+		default :
+		    {
+			int integer;
+			int   rc;
+
+		    	rc=ll_get_data(object,Specification,(void *)&integer);
+		    	/*printf("%d = %ld\n",Specification,integer); */
+			if (rc >= 0)
+			{
+			    XPUSHs(sv_2mortal(newSViv(integer)));
 			    XSRETURN(1);
 			}
 			else
@@ -3331,6 +3435,76 @@ ll_control(control_op,host_list,user_list,job_list, class_list,priority)
 		RETVAL
 
 void *
+ll_modify(modify_op,value_ref,job_id)
+	int   modify_op
+	SV   *value_ref
+	char *job_id
+
+	PPCODE:
+	{
+	    LL_element		*errObj = NULL;
+	    LL_modify_param	mycmd, *cmdp[2];
+	    int			rc;
+	    char *job_list[2];
+
+            job_list[0] = job_id;
+	    job_list[1] = NULL;
+
+            mycmd.type=modify_op;
+
+            switch (modify_op)
+            {
+                case EXECUTION_FACTOR:
+                case CONSUMABLE_CPUS:
+#if LLVER >= 03020000
+                case WCLIMIT_ADD_MIN:
+#endif
+                {
+		   int value;
+		   
+		   value=SvIV(SvRV(value_ref));
+                   mycmd.data=&value;
+                }
+                break;
+
+                case CONSUMABLE_MEMORY:
+                {
+                   int64_t value;
+
+		   value=SvIV(SvRV(value_ref));
+                   mycmd.data=&value;
+                }
+                break;
+#if LLVER >= 03020000
+                case JOB_CLASS:
+                case ACCOUNT_NO:
+                {
+		    STRLEN l;
+
+		    mycmd.data=SvPV(SvRV(value_ref),l);
+                }
+                break;
+#endif
+
+            }
+            cmdp[0]=&mycmd;
+	    cmdp[1]=NULL;
+
+	    rc=ll_modify(LL_API_VERSION,&errObj,cmdp,job_list);
+
+	    if (rc == MODIFY_SUCCESS )
+	    {
+		XSRETURN_IV(rc);
+	    }
+	    else
+	    {
+		XPUSHs(sv_2mortal(newSViv((long)rc)));
+		XPUSHs(sv_2mortal(newSViv((long)errObj)));
+	    } 
+	
+	}
+
+void *
 ll_preempt(job_step,type)
 	char *job_step
         int    type
@@ -3397,8 +3571,16 @@ ll_terminate_job(cluster,proc,from_host,msg)
 	OUTPUT:
 		RETVAL
 
+
 char *
 ll_error(errObj,print_to)
 	 LL_element *errObj
 	 int	     print_to
+
+	CODE:
+	{
+		RETVAL=ll_error(&errObj,print_to);
+	}
+	OUTPUT:
+		RETVAL
 
