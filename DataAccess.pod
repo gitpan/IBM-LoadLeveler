@@ -19,7 +19,7 @@ IBM::LoadLeveler - Data Access API
 	QUERY_GROUP|QUERY_CLASS|QUERY_HOST|QUERY_STARTDATE|QUERY_ENDDATE|\
 	QUERY_PROCID, \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
 
-  $object = ll_get_objs( $query, LL_STARTED|LL_SCHEDD|LL_CM|LL_MASTER|\
+  $object = ll_get_objs( $query, LL_STARTD|LL_SCHEDD|LL_CM|LL_MASTER|\
 	LL_STARTER|LL_HISTORY_FILE, $hostname, $number_of_objs, $error_code);
 
   $return = ll_reset_request( $object );
@@ -325,7 +325,7 @@ The LoadLeveler Daemon you want to query, permitted values are:
 
 =item 3 $host
 
-Should be NULL unless you are querying LL_STARTD or LL_SCHED and want to query a machine other than the localhost. If you are querying LL_HISTORY_FILE then this should be the name of the history file.
+Should be NULL unless you are querying LL_STARTD or LL_SCHEDD and want to query a machine other than the localhost. If you are querying LL_HISTORY_FILE then this should be the name of the history file.
 
 =item 4 $number
 

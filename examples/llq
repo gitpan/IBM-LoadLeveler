@@ -11,6 +11,8 @@ use Sys::Hostname;
     "NQ", "E", "EP",
     "MP");
 
+@HoldType=("","H","S","HS");
+
 # Format for llq style output
 format STDOUT_TOP =
 Id                       Owner      Submitted   ST PRI Class        Running On
@@ -79,7 +81,12 @@ while ( $job)
 	    $machine=ll_get_data($step,LL_StepGetFirstMachine);
 	    $tmp=ll_get_data($machine,LL_MachineName);
 	    $run=$1 if $tmp=~/([^\.]*)/;
-	}
+	} else {
+            $holdtype=ll_get_data($step,LL_StepHoldType);
+            if ($holdtype > 0 ){
+              $st=$HoldType[$holdtype];
+            }
+        }
 
 	write;
 

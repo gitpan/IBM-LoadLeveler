@@ -18,6 +18,26 @@ unpack_ll_step_id(id)
     return(array);
 }
 
+#if LLVER >= 3020000
+
+HV *
+unpack_ll_adapter_usage(adapter_usage)
+    LL_ADAPTER_USAGE *adapter_usage;
+{
+    HV *hash;
+    hash=(HV *)sv_2mortal((SV *)newHV());
+
+    hv_store(hash,"dev_name",strlen("dev_name"),(newSVpv(adapter_usage->dev_name,0)),0);
+    hv_store(hash,"protocol",strlen("protocol"),(newSVpv(adapter_usage->protocol,0)),0);
+    hv_store(hash,"subsystem",strlen("subsystem"),(newSVpv(adapter_usage->subsystem,0)),0);
+    hv_store(hash,"wid",strlen("wid"),(newSViv((long)adapter_usage->wid)),0);
+    hv_store(hash,"mem",strlen("mem"),(newSViv(adapter_usage->mem)),0);
+
+    return(hash);
+}
+
+#endif
+
 /*
  * Convert an rusage struct into a hash
  *
@@ -2884,7 +2904,7 @@ ll_get_data(object,Specification)
 	PPCODE:
 	{	switch (Specification)
 		{
-#if LLVER >= 03020000
+#if LLVER >= 3020000
 		case LL_AdapterUsageDevice:
 		case LL_ClassName:
 		case LL_ClassNqsSubmit:
@@ -2892,6 +2912,7 @@ ll_get_data(object,Specification)
 		case LL_ClassCkptDir:
 		case LL_ClassPreemptClass:
 		case LL_ClassStartClass:
+		case LL_TaskInstanceMachineAddress:
 #endif
 		case LL_JobManagementInteractiveClass:
 		case LL_JobManagementAccountNo:
@@ -2963,13 +2984,16 @@ ll_get_data(object,Specification)
 			    XSRETURN_UNDEF;
 		    }
 		    break ;
-#if LLVER >= 03020000
+#if LLVER >= 3020000
 		case LL_ClassExcludeUsers: 
 		case LL_ClassIncludeUsers: 
 		case LL_ClassExcludeGroups: 
 		case LL_ClassIncludeGroups: 
 		case LL_ClassAdmin: 
 		case LL_ClassNqsQuery: 
+#endif
+#if LLVER >= 3020006
+		case LL_AdapterUsageTag:
 #endif
        		case LL_MachineAdapterList:
         	case LL_MachineAvailableClassList:
@@ -3002,21 +3026,24 @@ ll_get_data(object,Specification)
 				Safefree(pointer);
 				pointer=*(array+i);
 			    }
-			    XSRETURN(i);
 			    Safefree(array);
+			    XSRETURN(i);
 			}
 			else
 			    XSRETURN_UNDEF;
 		    }
 		    break ;
 	      case LL_MachinePoolList:
+#if LLVER >= 3020000
+	      case LL_AdapterWindowList:
+#endif
 		    {
 			int  **array;
 			int   *pointer;
 			int    i;
 			int    rc;
 
-		    	/* array of char * data type */
+		    	/* array of int * data type */
 			rc=ll_get_data(object,Specification,(void *)&array);
 			if ( rc >= 0 )
 			{
@@ -3055,7 +3082,11 @@ ll_get_data(object,Specification)
 			    XSRETURN_UNDEF;
 		    }
 		    break;
-#if LLVER >= 03020000
+#if LLVER >= 3020000
+		case LL_AdapterUsageWindowMemory64:
+		case LL_AdapterMinWindowSize64:
+		case LL_AdapterMaxWindowSize64:
+		case LL_AdapterMemory64:
 		case LL_ClassCkptTimeHardLimit:
 		case LL_ClassCkptTimeSoftLimit:
 		case LL_ClassWallClockLimitHard:
@@ -3277,6 +3308,9 @@ ll_get_data(object,Specification)
 		case LL_JobSubmitTime:
 		case LL_StepCompletionDate:
 		case LL_StepStartDate:
+#if LLVER >= 3020009
+		case LL_StepStartTime:
+#endif
 		case LL_StepDispatchTime:
 		case LL_StepCkptFailStartTime:
 		case LL_StepCkptGoodElapseTime:
@@ -3456,7 +3490,7 @@ ll_modify(modify_op,value_ref,job_id)
             {
                 case EXECUTION_FACTOR:
                 case CONSUMABLE_CPUS:
-#if LLVER >= 03020000
+#if LLVER >= 3020000
                 case WCLIMIT_ADD_MIN:
 #endif
                 {
@@ -3475,7 +3509,7 @@ ll_modify(modify_op,value_ref,job_id)
                    mycmd.data=&value;
                 }
                 break;
-#if LLVER >= 03020000
+#if LLVER >= 3020000
                 case JOB_CLASS:
                 case ACCOUNT_NO:
                 {

@@ -21,7 +21,22 @@ our @EXPORT = qw(
 	QUERY_GROUP     QUERY_CLASS   QUERY_HOST   QUERY_PERF
 	QUERY_STARTDATE QUERY_ENDDATE QUERY_PROCID
 
+	EXECUTION_FACTOR CONSUMABLE_CPUS CONSUMABLE_MEMORY
+        WCLIMIT_ADD_MIN  JOB_CLASS       ACCOUNT_NO
+
 	ALL_DATA STATUS_LINE Q_LINE
+
+        NO_HOLD HOLDTYPE_USER HOLDTYPE_SYSTEM HOLDTYPE_USERSYS
+
+        SET_BATCH SET_INTERACTIVE
+
+        BATCH_JOB INTERACTIVE_JOB INTERACTIVE_HOSTLIST_SESSION
+
+        SHARED NOT_SHARED SLICE_NOT_SHARED
+
+        LOW AVERAGE HIGH
+
+        PREEMPT_STEP RESUME_STEP SYSTEM_PREEMPT_STEP
 
 	LL_STARTD LL_SCHEDD LL_CM  LL_MASTER LL_STARTER LL_HISTORY_FILE
 
@@ -54,6 +69,7 @@ our @EXPORT = qw(
 	ll_version
 	ll_query
 	ll_set_request
+	ll_reset_request	
 	ll_get_objs
 	ll_get_data
 	ll_next_obj
@@ -143,6 +159,7 @@ our @EXPORT = qw(
 	LL_StepGetFirstNode
 	LL_StepGetNextNode
 	LL_StepMachineCount
+	LL_StepMaxProtocolInstances
 	LL_StepGetFirstMachine
 	LL_StepGetNextMachine
 	LL_StepGetFirstSwitchTable
@@ -151,6 +168,7 @@ our @EXPORT = qw(
 	LL_StepTaskInstanceCount
 	LL_StepAccountNumber
 	LL_StepAdapterUsage
+	LL_StepBulkXfer
 	LL_StepComment
 	LL_StepCompletionCode
 	LL_StepCompletionDate
@@ -173,6 +191,7 @@ our @EXPORT = qw(
 	LL_StepPriority
 	LL_StepShell
 	LL_StepStartDate
+	LL_StepStartTime
 	LL_StepDispatchTime
 	LL_StepState
 	LL_StepStartCount
@@ -200,6 +219,7 @@ our @EXPORT = qw(
 	LL_StepRestart
 	LL_StepBlocking
 	LL_StepTaskGeometry
+	LL_StepTotalRcxtBlocks
 	LL_StepTotalTasksRequested
 	LL_StepTasksPerNodeRequested
 	LL_StepTotalNodesRequested
@@ -275,7 +295,12 @@ our @EXPORT = qw(
 	LL_StepCkptRestart
 	LL_StepCkptRestartSameNodes
 	LL_StepWallClockUsed
-	LL_StepLargePage
+        LL_StepLargePage
+        LL_StepMaxProtocolInstances
+        LL_StepBulkXfer
+        LL_StepTotalRcxtBlocks
+        LL_StepStartTime
+        LL_StepUserRcxtBlocks
 
 	LL_MachineAdapterList
 	LL_MachineArchitecture
@@ -355,6 +380,7 @@ our @EXPORT = qw(
 	LL_TaskInstanceGetFirstAdapterUsage
 	LL_TaskInstanceGetNextAdapterUsage
 	LL_TaskInstanceMachineName
+	LL_TaskInstanceMachineAddress
 	LL_TaskInstanceTaskID
 
 	LL_AdapterInterfaceAddress
@@ -363,16 +389,24 @@ our @EXPORT = qw(
 	LL_AdapterUsageDevice
 	LL_AdapterUsageWindow
 	LL_AdapterUsageProtocol
-	LL_AdapterUsageTag
+        LL_AdapterUsageTag
 	LL_AdapterUsageWindowMemory
+	LL_AdapterUsageWindowMemory64
 	LL_AdapterCommInterface
 	LL_AdapterUsageMode
 	LL_AdapterMinWindowSize
+	LL_AdapterMinWindowSize64
 	LL_AdapterMaxWindowSize
+	LL_AdapterMaxWindowSize64
 	LL_AdapterMemory
+	LL_AdapterMemory64
 	LL_AdapterTotalWindowCount
 	LL_AdapterAvailWindowCount
 	LL_AdapterUsageAddress
+	LL_AdapterUsageNetworkId
+        LL_AdapterUsageCommunicationInterface
+        LL_AdapterUsageInstanceNumber
+        LL_AdapterWindowList
 
 	LL_CredentialGid
 	LL_CredentialGroupName
@@ -543,7 +577,7 @@ our @EXPORT = qw(
 	LL_MachineName
 	LL_JobGetNextStep
 );
-our $VERSION = '1.00';
+our $VERSION = '1.02';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()

@@ -3,11 +3,11 @@
 
 =head1 Submit API
 
-IBM::Loadleveler Submit API
+IBM::LoadLeveler Submit API
 
 =head1 SYNOPSIS
 
-  use IBM::Loadleveler
+  use IBM::LoadLeveler
 
   # Submit API function
 

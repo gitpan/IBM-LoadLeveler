@@ -27,13 +27,13 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
 
   $rc=llhold(LL_CONTROL_HOLD_USER|LL_CONTROL_HOLD_SYSTEM|LL_CONTROL_HOLD_RELEASE,\@host_list,\@user_list,\@job_list);
 
-  rc=llprio(LL_CONTROL_PRIO_ABS|LL_CONTROL_PRIO_ADJ,\@job_list,$priority);
+  $rc=llprio(LL_CONTROL_PRIO_ABS|LL_CONTROL_PRIO_ADJ,\@job_list,$priority);
 
   $rc=ll_start_job($cluster,$proc,$from_host,\@node_list);
   $rc=ll_terminate_job($cluster,$proc,$from_host,$msg);
   ($rc,$errObj)=ll_preempt($job_step_id, PREEMPT_STEP|RESUME_STEP);
 
- ($rc,err_obj)=ll_modify(EXECUTION_FACTOR|CONSUMABLE_CPUS|CONSUMABLE_MEMORY|WCLIMIT_ADD_MIN|JOB_CLASS|ACCOUNT_NO,\$value,$job_step);
+  ($rc,$err_obj)=ll_modify(EXECUTION_FACTOR|CONSUMABLE_CPUS|CONSUMABLE_MEMORY|WCLIMIT_ADD_MIN|JOB_CLASS|ACCOUNT_NO,\$value,$job_step);
 
   # Error API
 
@@ -52,7 +52,7 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
 		QUERY_ENDDATE|QUERY_PROCID,\
 		 \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
 
-  $object = ll_get_objs( $query, LL_STARTED|LL_SCHEDD|LL_CM|LL_MASTER|\
+  $object = ll_get_objs( $query, LL_STARTD|LL_SCHEDD|LL_CM|LL_MASTER|\
 		LL_STARTER|LL_HISTORY_FILE, $hostname, $number_of_objs, $error_code);
 
   $return = ll_reset_request( $object );
@@ -93,7 +93,15 @@ This module is not for the faint hearted.  The LoadLeveler API returns a huge am
 
 =head2 LoadLeveler Versions
 
-This version has only been tested with LoadLeveler 3.1.0.16 under AIX 5.1 and 3.2.0 under AIX 5.2.
+This version has been tested with:
+
+=over 4
+
+=item * LoadLeveler 3.1.0.16 & 3.1.0.24 under AIX 5.1.
+
+=item * LoadLeveler 3.2.0, and 3.2.0.9 under AIX 5.2.
+
+=back
 
 Since LoadLeveler 3.2 does not change the version number in the llapi.h file a crude hack is used to work out what version is installed and only include the appropriate functions and enum values.  If your compile starts spitting out errors like:
 
@@ -102,12 +110,95 @@ Since LoadLeveler 3.2 does not change the version number in the llapi.h file a c
 
 Then the hack has probably not worked and you will either need to either fix the Makefile.PL file or hardcode a value for the LLVER variable:
 
- 3.1 : 03010000
- 3.2 : 03020000
+ 3.1 : 3010000
+ 3.2 : 3020000
 
 There is a fairly strong probability that since I tested using 3.1.0.16 there might be failures with previous versions.  If there is I would be grateful if you could send me, the outputs from the make command and:
 
  lslpp -lc | grep LoadL
+
+These are the changes I know of for arguments to ll_get_data:
+
+=over 4
+
+=item  * < 3.2.0.0
+
+ LL_AdapterUsageWindowMemory
+ LL_AdapterMinWindowSize
+ LL_AdapterMaxWindowSize
+ LL_AdapterMemory
+
+=item * 3.2.0.0
+
+ LL_StepMaxProtocolInstances
+ LL_TaskInstanceMachineAddress
+ LL_AdapterUsageWindowMemory64
+ LL_AdapterMinWindowSize64
+ LL_AdapterMaxWindowSize64
+ LL_AdapterMemory64
+ LL_AdapterUsageCommunicationInterface
+ LL_AdapterUsageInstanceNumber
+ LL_AdapterWindowList
+ LL_ClassName
+ LL_ClassPriority
+ LL_ClassExcludeUsers
+ LL_ClassIncludeUsers
+ LL_ClassExcludeGroups
+ LLL_ClassIncludeGroups
+ LL_ClassAdmin
+ LL_ClassNqsClass
+ LL_ClassNqsSubmit
+ LL_ClassNqsQuery
+ LL_ClassMaxProcessors
+ LL_ClassMaxJobs
+ LL_ClassGetFirstResourceRequirement
+ LL_ClassGetNextResourceRequirement
+ LL_ClassComment
+ LL_ClassCkptDir
+ LL_ClassCkptTimeHardLimit
+ LL_ClassCkptTimeSoftLimit
+ LL_ClassWallClockLimitHard
+ LL_ClassWallClockLimitSoft
+ LL_ClassCpuStepLimitHard
+ LL_ClassCpuStepLimitSoft
+ LL_ClassCpuLimitHard
+ LL_ClassCpuLimitSoft
+ LL_ClassDataLimitHard
+ LL_ClassDataLimitSoft
+ LL_ClassCoreLimitHard
+ LL_ClassCoreLimitSoft
+ LL_ClassFileLimitHard
+ LL_ClassFileLimitSoft
+ LL_ClassStackLimitHard
+ LL_ClassStackLimitSoft
+ LL_ClassRssLimitHard
+ LL_ClassRssLimitSoft
+ LL_ClassNice
+ LL_ClassFreeSlots
+ LL_ClassMaximumSlots
+ LL_ClassConstraints
+ LL_ClassExecutionFactor
+ LL_ClassMaxTotalTasks
+ LL_ClassPreemptClass
+ LL_ClassStartClass
+ LL_ClassMaxProtocolInstances
+
+=item * 3.2.0.5
+
+ LL_AdapterUsageNetworkId
+
+=item * 3.2.0.6
+
+ LL_StepBulkXfer
+ LL_StepTotalRcxtBlocks
+ LL_AdapterUsageTag
+
+=item * 3.2.0.9
+
+ LL_StepStartTime
+ LL_StepUserRcxtBlocks
+
+=back
 
 =head2 64 bit types and 32 bit perl
 

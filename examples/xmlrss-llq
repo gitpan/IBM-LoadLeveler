@@ -36,6 +36,7 @@ while(TRUE) {
    $jobs_idle = 0;
    $jobs_run  = 0;
    $jobs_held = 0;
+   $jobs_preempt = 0;
    $jobs_not_queued = 0;
 
    #
@@ -55,21 +56,25 @@ while(TRUE) {
    #
 
    $job=ll_get_objs($query,LL_CM,NULL,$number,$err);
-   while( $job)
+   while($job)
    {
       #
       # Get the status for the first step of that Job
       #
 
       $step=ll_get_data($job,LL_JobGetFirstStep);
-      $state=ll_get_data($step,LL_StepState);
-      $st=$StepState[$state];
-
-      $jobs_run++        if ($st == "R");
-      $jobs_idle++       if ($st == "I");
-      $jobs_held++       if ($st == "H");
-      $jobs_not_queued++ if ($st == "NQ");
-
+      while($step)
+      {
+         $holdtype=ll_get_data($step,LL_StepHoldType);
+         $state=ll_get_data($step,LL_StepState);
+         $st=$StepState[$state];
+         $jobs_run++     if ($st == "R");
+         $jobs_idle++    if ($st == "I");
+         $jobs_held++    if ($holdtype > 0 );
+         $jobs_preempt++ if ($st == "E");
+         $jobs_nqueued++ if ($st == "NQ");
+         $step=ll_get_data($job,LL_JobGetNextStep);
+      }
       $job=ll_next_obj($query);
    }
 
@@ -80,7 +85,7 @@ while(TRUE) {
    ll_free_objs($job);
    ll_deallocate($query);
 
-   $title_string = "Jobs: R=$jobs_run, I=$jobs_idle, H=$jobs_held, NQ=$jobs_not_queued";
+   $title_string = "Jobs: R=$jobs_run, I=$jobs_idle, H=$jobs_held, NQ=$jobs_not_queued E=$jobs_preempt";
 
    $nodes_busy = 0;
    $nodes_idle = 0;

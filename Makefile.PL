@@ -20,6 +20,7 @@ $LLVER=$1;
 $LLVER=~s/(\d\.)/0\1/g;
 $LLVER=~s/\.(\d)$/.0\1/;
 $LLVER=~s/\.//g;
+$LLVER=~s/^0(\d+)/\1/;
 
 WriteMakefile(
     'NAME'		=> 'IBM::LoadLeveler',

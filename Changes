@@ -1,5 +1,18 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+1.02  Mon Sep 20 12:31:00 2004
+	- Analyzed Versions 3.1.0.24 & 3.2.0.0 - 3.2.0.9 for changes
+	  updated LoadLeveler.pod and pm/xs files accordingly
+	- exported symbols for ll_modify
+
+1.01  Mon Aug 23 13:30:00 2004  
+        - ll_reset_request not exported
+        - bugfix from Bernd Kallies (kallies@zib.de)
+	- Stripped leading 0 from LLVER variable in Makefile
+	  stops it looking like octal, which is bad for version 3.2.0.8
+	- Fixed a few typos
+	- Updated examples xmlrss-llq and rss-llq
+
 1.00  Tue Jan 06 10:13:00 2004
 	- Added support for LoadLeveler 3.2
 		- LL_CLASS_* in Data Access API
