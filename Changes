@@ -1,0 +1,37 @@
+Revision history for Perl extension IBM::LoadLeveler.
+
+0.07  Tue Mar 18 09:44:00 2003
+	- Changed module name from LoadLeveler to IBM::LoadLeveler for CPAN
+
+0.06  Thu Mar 06 16:16:00 2003
+	- Added Notes on Core dumps with large history files and solution 
+	  contributed by Dr Peter Mayes (peter_mayes@uk.ibm.com ) 
+	  and Mark Roberts (mark.roberts@awe.co.uk)
+	- Modified documentation
+
+0.05  Tue Jan 28 16:15:00 2003
+	- Added Workload Management API
+	- Added Data Access API test
+	- More Documentation
+
+0.04  Tue Jan 21 15:20:00 2003
+	- 64 bit data types are now truncated if they overflow the Perl type
+	- Added Generation and installation of llapi.ph to Makefile.PL
+	- Added html target to convert pod to html
+
+0.03  Thu Jan 16 09:26:32 2003
+	- Added submit API
+	- Added ll_control function from Workload Management API
+	- Added ll_error
+
+0.02  Tue Jan 07 16:12:05 2003
+	- Fixed int64_t ll_get_data return types
+	- added STATE_ constants to export list
+	- added machine_job_query & wlmstat examples
+	- Changed package name to LoadLeveler
+	- Improved 64 bit types
+
+0.01  Thu Dec 12 11:49:27 2002
+	- original version; created by h2xs 1.21 with options
+		-x -n LoadLeveler llapi.h
+

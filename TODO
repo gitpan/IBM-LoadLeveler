@@ -1,0 +1,24 @@
+API's to be added:
+
+	Accounting API
+	Checkpointing API
+	Parallel Job API
+
+Testing:
+	Only minimal testing so far under one version
+
+ll_get_data is a monstorous hack
+
+llquery & llsubmit make ll_get_data look like a nice tidy call
+
+llsubmit & ll_get_jobs return a horrific representation of the LL_Job structure
+
+LL_Job structure is not complete
+
+llapi.h needs to be converted using h2ph
+
+more tests and examples need to be added.
+
+ll_set_request ObjectFilter unpacking needs improving
+
+Improve handling of 64 bit return types.
