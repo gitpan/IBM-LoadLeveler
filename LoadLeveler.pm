@@ -577,7 +577,7 @@ our @EXPORT = qw(
 	LL_MachineName
 	LL_JobGetNextStep
 );
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -620,7 +620,7 @@ bootstrap IBM::LoadLeveler $VERSION;
 1;
 __END__
 
-sub llctl()
+sub llctl
 {
     my ($operation,$class_list_ref,$host_list_ref)=@_;
 
@@ -644,11 +644,11 @@ sub llctl()
     }
     else
     {
-	return ll_control($operation,$host_list_ref,NULL,NULL,$host_list_ref,0);
+	return ll_control($operation,$host_list_ref,undef,undef,$host_list_ref,0);
     }
 }
 
-sub llfavorjob()
+sub llfavorjob
 {
     my ($operation,$job_list_ref)=@_;
 
@@ -660,10 +660,10 @@ sub llfavorjob()
     }
     else
     {
-	return ll_control($operation,NULL,NULL,$job_list_ref,NULL,0);
+	return ll_control($operation,undef,undef,$job_list_ref,undef,0);
     }
 }
-sub llfavoruser()
+sub llfavoruser
 {
     my ($operation,$user_list_ref)=@_;
 
@@ -675,13 +675,13 @@ sub llfavoruser()
     }
     else
     {
-	return ll_control($operation,NULL,$user_list_ref,NULL,NULL,0);
+	return ll_control($operation,undef,$user_list_ref,undef,undef,0);
     }
 }
 
-sub llhold()
+sub llhold
 {
-    my ($operation,$host_list_ref,$user_list_ref,$job_list_ref)=@_;
+    my ($operation, $host_list_ref, $user_list_ref, $job_list_ref) = @_;
 
     if ( $operation != LL_CONTROL_HOLD_USER &&
 	 $operation != LL_CONTROL_HOLD_SYSTEM &&
@@ -692,11 +692,11 @@ sub llhold()
     }
     else
     {
-	return ll_control($operation,$host_list_ref,$user_list_ref,$job_list_ref,NULL,0);
+	return ll_control($operation,$host_list_ref,$user_list_ref,$job_list_ref,undef,0);
     }
 }
 
-sub llprio()
+sub llprio
 {
     my ($operation,$job_list_ref,$priority)=@_;
 
@@ -708,6 +708,6 @@ sub llprio()
     }
     else
     {
-	return ll_control($operation,NULL,NULL,$job_list_ref,NULL,$priority);
+	return ll_control($operation,undef,undef,$job_list_ref,undef,$priority);
     }
 }

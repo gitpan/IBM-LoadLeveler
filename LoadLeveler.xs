@@ -18,8 +18,6 @@ unpack_ll_step_id(id)
     return(array);
 }
 
-#if LLVER >= 3020000
-
 HV *
 unpack_ll_adapter_usage(adapter_usage)
     LL_ADAPTER_USAGE *adapter_usage;
@@ -35,8 +33,6 @@ unpack_ll_adapter_usage(adapter_usage)
 
     return(hash);
 }
-
-#endif
 
 /*
  * Convert an rusage struct into a hash
@@ -461,7 +457,6 @@ SV *rv;
 	/* is it empty? */
 	avlen = av_len(av);
 	if( avlen < 0 ){
-		warn("XS_unpack_charPtrPtr: array was empty");
 		return( (char**)NULL );
 	}
 

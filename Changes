@@ -1,5 +1,10 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+1.03  Web Oct 20 10:20:00 2004
+	- Fixed problem with ll_control wrappers
+	- Checked to see if any updates needed for version 3.2.0.11
+	- Removed NULL string warning in XS_unpack_charPtrPtr
+
 1.02  Mon Sep 20 12:31:00 2004
 	- Analyzed Versions 3.1.0.24 & 3.2.0.0 - 3.2.0.9 for changes
 	  updated LoadLeveler.pod and pm/xs files accordingly

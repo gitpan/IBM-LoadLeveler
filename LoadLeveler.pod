@@ -31,7 +31,7 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
 
   $rc=ll_start_job($cluster,$proc,$from_host,\@node_list);
   $rc=ll_terminate_job($cluster,$proc,$from_host,$msg);
-  ($rc,$errObj)=ll_preempt($job_step_id, PREEMPT_STEP|RESUME_STEP);
+  ($rc,$err_obj)=ll_preempt($job_step_id, PREEMPT_STEP|RESUME_STEP);
 
   ($rc,$err_obj)=ll_modify(EXECUTION_FACTOR|CONSUMABLE_CPUS|CONSUMABLE_MEMORY|WCLIMIT_ADD_MIN|JOB_CLASS|ACCOUNT_NO,\$value,$job_step);
 
@@ -93,15 +93,7 @@ This module is not for the faint hearted.  The LoadLeveler API returns a huge am
 
 =head2 LoadLeveler Versions
 
-This version has been tested with:
-
-=over 4
-
-=item * LoadLeveler 3.1.0.16 & 3.1.0.24 under AIX 5.1.
-
-=item * LoadLeveler 3.2.0, and 3.2.0.9 under AIX 5.2.
-
-=back
+This version has been tested with LoadLeveler 3.1.0.16 under AIX 5.1 and various 3.2.0.x versions under AIX 5.2.
 
 Since LoadLeveler 3.2 does not change the version number in the llapi.h file a crude hack is used to work out what version is installed and only include the appropriate functions and enum values.  If your compile starts spitting out errors like:
 
@@ -144,7 +136,7 @@ These are the changes I know of for arguments to ll_get_data:
  LL_ClassExcludeUsers
  LL_ClassIncludeUsers
  LL_ClassExcludeGroups
- LLL_ClassIncludeGroups
+ LL_ClassIncludeGroups
  LL_ClassAdmin
  LL_ClassNqsClass
  LL_ClassNqsSubmit
