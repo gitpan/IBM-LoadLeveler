@@ -435,6 +435,25 @@ Frees the query object itself, this is the last LoadLeveler action.
 
 =back
 
+=head2 LL_MachinePoolList & LL_AdapterWindowList
+
+These two requests are supposed to return integer arrays.  In this module they will return lists.
+
+
+=over 4
+
+=item * LL_MachinePoolList
+
+This will return a list with LL_MachinePoolListSize elements in it.
+
+
+=item * LL_AdapterWindowList
+
+This will return a list with LL_AdapterTotalWindowCount elements in it.
+
+=back
+
+
 =head1 AUTHOR
 
 Mike Hawkins <Mike.Hawkins@awe.co.uk>

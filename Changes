@@ -1,5 +1,7 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+1.04  Tue Apr  5 13:00:00 2005
+	- Fixed LL_AdapterWindowList & LL_MachinePoolList.
 1.03  Web Oct 20 10:20:00 2004
 	- Fixed problem with ll_control wrappers
 	- Checked to see if any updates needed for version 3.2.0.11

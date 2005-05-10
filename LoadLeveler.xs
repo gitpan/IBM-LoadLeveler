@@ -3029,36 +3029,62 @@ ll_get_data(object,Specification)
 		    }
 		    break ;
 	      case LL_MachinePoolList:
+	      {
+		  int    rc;
+		  int	 PoolSize;
+		  int	 *array;
+		  int	 i;
+
+		  /* First we need to get the Array size from the 
+		   *  LL_MachinePoolListSize
+		   */
+		  rc=ll_get_data(object,LL_MachinePoolListSize,(void *)&PoolSize);
+		  if ( rc >= 0 )
+		  {
+		      /* printf("MachinePoolListSize = %ld\n",PoolSize); */
+		      rc=ll_get_data(object,Specification,(void *)&array);
+		      if ( rc >= 0 )
+		      {
+			  for(i=0;i!=PoolSize;i++)
+			  {
+			      /*	  printf("Pool %d = %ld\n",i,array[i]); */
+			      XPUSHs(sv_2mortal(newSViv((long)array[i])));
+			  }
+			  XSRETURN(PoolSize);
+		      }
+		  }
+		  break;
+	      }
 #if LLVER >= 3020000
 	      case LL_AdapterWindowList:
-#endif
-		    {
-			int  **array;
-			int   *pointer;
-			int    i;
-			int    rc;
+	          {
 
-		    	/* array of int * data type */
-			rc=ll_get_data(object,Specification,(void *)&array);
-			if ( rc >= 0 )
-			{
-			    i=0;
-			    while (pointer != NULL)
-			    {
-				/* printf("%d = %s\n",Specification,pointer); */
-		    		XPUSHs(sv_2mortal(newSViv((long)pointer)));
-				i++;
-				Safefree(pointer);
-				pointer=*(array+i);
-			    }	
-			    Safefree(array);
-			    XSRETURN(i);
-			}
-			else
-			    XSRETURN_UNDEF;
-			
-		    }
-		    break ;
+		      int    rc;
+		      int	 count;
+		      int	 *array;
+		      int	 i;
+		      
+		      /* First we need to get the Array size from the 
+		       *  LL_MachinePoolListSize
+		       */
+		      rc=ll_get_data(object,LL_AdapterTotalWindowCount,(void *)&count);
+		      if ( rc >= 0 )
+		      {
+			  /* printf("MachinePoolListSize = %ld\n",count); */
+			  rc=ll_get_data(object,Specification,(void *)&array);
+			  if ( rc >= 0 )
+			  {
+			      for(i=0;i!=count;i++)
+			      {
+				  /*	  printf("Adapter %d = %ld\n",i,array[i]); */
+				  XPUSHs(sv_2mortal(newSViv((long)array[i])));
+			      }
+			      XSRETURN(count);
+			  }
+		      }
+		  }
+		  break;
+#endif
 		case LL_MachineLoadAverage:
         	case LL_MachineSpeed:
         	case LL_MachUsageMachineSpeed:
