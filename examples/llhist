@@ -13,7 +13,7 @@ if ($return != 0 )
     print STDERR "ll_set_request failed Return = $return\n";
 }
 
-$job=ll_get_objs($query,LL_HISTORY_FILE,"/home/gmhk/globalhist.200210290000",$number,$err);
+$job=ll_get_objs($query,LL_HISTORY_FILE,"/home/mike/globalhist.200210290000",$number,$err);
 
 while ( $job)
 {
@@ -56,6 +56,6 @@ while ( $job)
     }
     $job=ll_next_obj($query);
 }
-ll_free_objs($job);
+ll_free_objs($query);
 ll_deallocate($query);
 

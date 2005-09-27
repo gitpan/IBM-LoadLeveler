@@ -69,13 +69,11 @@ else
 			print "  RESULT: memory_snapshot: $memory_snapshot\n";
 			$memory_highwater = ll_get_data($wlm,LL_WlmStatMemoryHighWater);
 			print "  RESULT: memory_highwater: $memory_highwater\n";
-			$rc = ll_free_objs($qw);
 		    }
 		    else
 		    {
 			print "  RESULT: No WLM object returned.\n";
 		    }
-		    $rc = ll_deallocate($machine);
 		    $machine = ll_get_data($step,LL_StepGetNextMachine);
 		}
 	    }

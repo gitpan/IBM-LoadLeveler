@@ -13,7 +13,7 @@ use IBM::LoadLeveler;
 
 
 # Make a Query Object
-$query = ll_query(JOBS);
+$query = ll_query(MACHINES);
 printf  "%sok 1\n", defined $query ? '' : 'not ';
 
 # Make a request Object
@@ -27,7 +27,7 @@ $job=ll_get_objs($query,LL_CM,NULL,$number,$err);
 printf  "%sok 3\n", $number > 0 ? '' : 'not ';
 	
 # Extract Some Data
-$name=ll_get_data($job,LL_JobName);
+$name=ll_get_data($job,LL_MachineName);
 printf  "%sok 4\n", defined $name ? '' : 'not ';
 
 # Tidy up at the end

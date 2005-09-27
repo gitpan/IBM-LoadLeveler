@@ -6,11 +6,10 @@
 # change 'tests => 1' to 'tests => last_test_to_print';
 
 use Test;
-BEGIN { plan tests => 8 };
+BEGIN { plan tests => 7 };
 use IBM::LoadLeveler;
 
 #########################
-
 
 # Make a Query Object
 $query = ll_query(MACHINES);
@@ -35,18 +34,26 @@ printf  "%sok 5\n", $#poolList == $size-1 ? '' : 'not ';
 # Find an adapter with more than one window
 
 $adapter = ll_get_data($mach, LL_MachineGetFirstAdapter);
-printf  "%sok 6\n", defined  $size ? '' : 'not ';
-
-while ( ll_get_data($adapter, LL_AdapterTotalWindowCount) == 0 )
+if ( defined $adapter )
 {
-	$adapter = ll_get_data($mach, LL_MachineGetNextAdapter);
-	last if ! $adapter
+	while ( ll_get_data($adapter, LL_AdapterTotalWindowCount) == 0 )
+	{
+		$adapter = ll_get_data($mach, LL_MachineGetNextAdapter);
+		print STDERR "ADAP = $adapter\n";
+		last if ! $adapter
+	}
+	$size = ll_get_data($adapter, LL_AdapterTotalWindowCount);
+	printf  "%sok 6\n", defined  $size ? '' : 'not ';
+	@list = ll_get_data($adapter, LL_AdapterWindowList);
+	printf  "%sok 7\n", $#list == $size-1 ? '' : 'not ';
 }
-$size = ll_get_data($adapter, LL_AdapterTotalWindowCount);
-printf  "%sok 7\n", defined  $size ? '' : 'not ';
-@list = ll_get_data($adapter, LL_AdapterWindowList);
-printf  "%sok 8\n", $#list == $size-1 ? '' : 'not ';
+else
+{
+	print STDERR "\nUnable to find an adapter, skipping tests 6-7\n";
+	printf  "ok 6\n";
+	printf  "ok 7\n";
+}
 
 # Tidy up at the end
-ll_free_objs($job);
+ll_free_objs($query);
 ll_deallocate($query);

@@ -13,11 +13,11 @@ IBM::LoadLeveler - Data Access API
 
   # Data Access API functions
 
-  $query = ll_query( JOBS|MACHINES|CLUSTER|WLMSTAT|MATRIX|CLASSES );
+  $query = ll_query( JOBS|MACHINES|CLUSTER|WLMSTAT|MATRIX|CLASSES|RESERVATIONS );
 
   $return = ll_set_request( $query,QUERY_ALL|QUERY_JOBID|QUERY_STEPID|\
 	QUERY_GROUP|QUERY_CLASS|QUERY_HOST|QUERY_STARTDATE|QUERY_ENDDATE|\
-	QUERY_PROCID, \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
+	QUERY_PROCID|QUERY_RESERVATION_ID, \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
 
   $object = ll_get_objs( $query, LL_STARTD|LL_SCHEDD|LL_CM|LL_MASTER|\
 	LL_STARTER|LL_HISTORY_FILE, $hostname, $number_of_objs, $error_code);
@@ -93,11 +93,12 @@ The Data Access API has the following functions:
 
 =item * ll_query
 
-	$query = ll_query( JOBS | MACHINES | CLUSTER | WLMSTAT | MATRIX | CLASSES );
+	$query = ll_query( JOBS | MACHINES | CLUSTER | WLMSTAT | MATRIX | CLASSES | RESERVATIONS);
 
 ll_query is the first call you make to access the API it establishes the type of information you receive.
 
 Note: CLASSES query is only available in version LoadLeveler 3.2 and above.
+      RESERVATIONS requires LoadLevler 3.3+
 
 =item * ll_set_request
 
@@ -151,6 +152,9 @@ The permissable Query Flags depends on the type of query being made.  The flags 
 =item * QUERY_PROCID
 : Query by process id.
 
+=item * QUERY_RESERVATION_ID
+: Query by reservation id.
+
 =back
 
 They can be used with the following query types:
@@ -164,6 +168,7 @@ They can be used with the following query types:
 	CLASSES		QUERY_ALL QUERY_CLASS
 	WLMSTAT		QUERY_STEPID
 	MATRIX		QUERY_ALL QUERY_HOST
+	RESERVATIONS	QUERY_ALL QUERY_USER QUERY_GROUP QUERY_HOST QUERY_RESERVATION_ID
 
 =end text
 
@@ -190,6 +195,9 @@ They can be used with the following query types:
 <tr>
 <td>	MATRIX		</td><td>QUERY_ALL QUERY_HOST</td>
 </tr>
+<tr>
+<td>	RESERVATIONS</td><td>	QUERY_ALL QUERY_USER QUERY_GROUP QUERY_HOST QUERY_RESERVATION_ID</td>
+</tr>
 </table>
 <br>
 
@@ -213,6 +221,7 @@ Specifies the search criteria:
 	QUERY_HOST	Array reference of LoadLeveler host names.
 	QUERY_STARTDATE or QUERY_ENDDATE two start dates or two end dates having the format MM/DD/YYYY eg ["01/14/2003", "02/23/2003"].
 	QUERY_PROCID	Array reference containing a single process id terminated by a NULL string eg ["procid",NULL].
+	QUERY_RESERVATION_ID	Array reference containing a list of reervation IDs.
 
 =end text
 
@@ -248,6 +257,10 @@ Specifies the search criteria:
 <tr>
 <td>	QUERY_PROCID</td><td>	Array reference containing a single process id terminated by a NULL string.  eg ["procid",NULL]</td>
 </tr>
+<tr>
+<td>	QUERY_RESERVATION_ID</td><td>	Array reference containing a list of reservation ids </td>
+</tr>
+
 </table>
 <br>
 

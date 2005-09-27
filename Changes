@@ -1,7 +1,20 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+1.05  Fri Aug 26 12:54:00 2005
+	- Added Linux Support
+	- Added support for LoadLeveler 3.3.0.0+
+	- Added llqres and reservation examples
+	- Changed how the export list is built from enums
+	- commented out the code for constants. I'm pretty sure
+	  this isn't needed. To be removed in a later version
+	- On the Linux version some values return NULL strings
+	  explicitly handle these as UNDEF or ""
+	- Added a simple attempt to define symbols from later versions
+	- on older versions.
+
 1.04  Tue Apr  5 13:00:00 2005
 	- Fixed LL_AdapterWindowList & LL_MachinePoolList.
+
 1.03  Web Oct 20 10:20:00 2004
 	- Fixed problem with ll_control wrappers
 	- Checked to see if any updates needed for version 3.2.0.11
@@ -14,7 +27,7 @@ Revision history for Perl extension IBM::LoadLeveler.
 
 1.01  Mon Aug 23 13:30:00 2004  
         - ll_reset_request not exported
-        - bugfix from Bernd Kallies (kallies@zib.de)
+        - bugfix from Bernd Kallies (kallies-AT-zib.de)
 	- Stripped leading 0 from LLVER variable in Makefile
 	  stops it looking like octal, which is bad for version 3.2.0.8
 	- Fixed a few typos
@@ -25,7 +38,7 @@ Revision history for Perl extension IBM::LoadLeveler.
 		- LL_CLASS_* in Data Access API
 		- Extra arguments to ll_modify
 	- using lslpp in Makefile to work out a version number
-	- More examples from Mark Roberts (mark.roberts@awe.co.uk)
+	- More examples from Mark Roberts (mark.roberts-AT-awe.co.uk)
 
 1.00  Fri Aug 29 15:34:00 2003
 	- Added QUERY_PROCID parameter from APAR IY35212
@@ -43,8 +56,8 @@ Revision history for Perl extension IBM::LoadLeveler.
 
 0.06  Thu Mar 06 16:16:00 2003
 	- Added Notes on Core dumps with large history files and solution 
-	  contributed by Dr Peter Mayes (peter_mayes@uk.ibm.com) 
-	  and Mark Roberts (mark.roberts@awe.co.uk)
+	  contributed by Dr Peter Mayes (peter_mayes-AT-uk.ibm.com) 
+	  and Mark Roberts (mark.roberts-AT-awe.co.uk)
 	- Modified documentation
 
 0.05  Tue Jan 28 16:15:00 2003

@@ -88,7 +88,7 @@ while(TRUE) {
    # Free up space allocated by LoadLeveler
    #
 
-   ll_free_objs($job);
+   ll_free_objs($query);
    ll_deallocate($query);
 
    $title_string = "Jobs: R=$jobs_run, I=$jobs_idle, H=$jobs_held, NQ=$jobs_not_queued";
@@ -136,7 +136,7 @@ while(TRUE) {
    # Free up space allocated by LoadLeveler
    #
 
-   ll_free_objs($machine);
+   ll_free_objs($query);
    ll_deallocate($query);
 
 

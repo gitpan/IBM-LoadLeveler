@@ -95,6 +95,6 @@ while ( $job)
     $job=ll_next_obj($query);
 }
 # Free up space allocated by LoadLeveler
-ll_free_objs($job);
+ll_free_objs($query);
 ll_deallocate($query);
 

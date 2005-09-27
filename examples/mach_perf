@@ -58,7 +58,6 @@ while($machine) {
          print "\n";
      }
      # Free up space allocated by perf query
-     ll_free_objs($perf);
 
      $mach_startd_state=ll_get_data($machine,LL_MachineStartdState);
      print "Startd State : $mach_startd_state\n";
@@ -101,16 +100,14 @@ while($machine) {
          print "Fail  In  Transactions: $startd_pfit\n";
          print "\n";
      }
-     # Free up space allocated by perf query
-     ll_free_objs($perf);
-
    }
 
    $machine = ll_next_obj($query_mach);
 }
 
 # Free up space allocated by LoadLeveler
-ll_free_objs($machine);
+ll_free_objs($query_perf);
 ll_deallocate($query_perf);
+ll_free_objs($query_mach);
 ll_deallocate($query_mach);
 

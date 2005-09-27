@@ -1,4 +1,4 @@
-IBM::LoadLeveler version 0.07
+IBM::LoadLeveler version 1.05
 =============================
 
 This module makes the IBM LoadLeveler Data Access, Query, Submit & Workload management APIs available to Perl.
@@ -17,7 +17,7 @@ To install this module type the following:
 
 DEPENDENCIES
 
-This module requires IBM LoadLeveler 3.1.0 and AIX 5.1
+This module requires IBM LoadLeveler
 
   Copying
 

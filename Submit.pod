@@ -3,11 +3,11 @@
 
 =head1 Submit API
 
-IBM::LoadLeveler Submit API
+IBM::Loadleveler Submit API
 
 =head1 SYNOPSIS
 
-  use IBM::LoadLeveler
+  use IBM::Loadleveler
 
   # Submit API function
 
@@ -26,7 +26,7 @@ A minimal example of using the Submit API is:
 
 	use IBM::LoadLeveler;
 
-	my ($job_name,$owner,$group,$uid,$gid,$host,$steps,$job_step)=llsubmit("/home/gmhk/test_job/test_job.cmd",NULL,NULL);
+	my ($job_name,$owner,$group,$uid,$gid,$host,$steps,$job_step)=llsubmit("/home/mike/test_job/test_job.cmd",NULL,NULL);
 
 	print "Job Name   = $job_name\n";
 	print "Owner      = $owner\n";

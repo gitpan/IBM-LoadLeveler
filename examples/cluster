@@ -56,7 +56,7 @@ while($cluster)
 }
 
 # Free up space allocated by LoadLeveler
-ll_free_objs($cluster);
+ll_free_objs($query);
 ll_deallocate($query);
 
 sub array2string {

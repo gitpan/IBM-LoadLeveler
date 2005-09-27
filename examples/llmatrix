@@ -46,12 +46,11 @@ while($matrix)
     print "$col_mach_name:$col_proc_num:$col_row_count:$col_step_names\n";
     $matrix_cols = ll_get_data($matrix,LL_MatrixGetNextColumn);
   }
-  ll_free_objs($matrix_cols);
   $matrix = ll_next_obj($query);
 }
 
 # Free up space allocated by LoadLeveler
-ll_free_objs($matrix);
+ll_free_objs($query);
 ll_deallocate($query);
 
 sub array2string {

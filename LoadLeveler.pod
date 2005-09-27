@@ -45,11 +45,11 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
 
   # Data Access API functions
 
-  $query = ll_query( JOBS|MACHINES|CLUSTER|WLMSTAT|MATRIX );
+  $query = ll_query( JOBS|MACHINES|CLUSTER|WLMSTAT|MATRIX|RESERVATIONS );
 
   $return = ll_set_request( $query,QUERY_ALL|QUERY_JOBID|QUERY_STEPID|\
 		QUERY_GROUP|QUERY_CLASS|QUERY_HOST|QUERY_STARTDATE|\
-		QUERY_ENDDATE|QUERY_PROCID,\
+		QUERY_ENDDATE|QUERY_PROCID|QUERY_RESERVATION_ID,\
 		 \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
 
   $object = ll_get_objs( $query, LL_STARTD|LL_SCHEDD|LL_CM|LL_MASTER|\
@@ -64,6 +64,16 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
   $return = ll_deallocate ( $object );
 
   $result = ll_get_data( $object, $LLAPI_Specification );
+
+  # Reservation API
+
+  ($result,$object) = ll_make_reservation($start_time,$duration,RESERVATION_BY_NODE|RESERVATION_BY_HOSTLIST|RESERVATION_BY_JOBSTEP|RESERVATION_BY_JCF,$data,$options,\@users,\@groups,$group);
+
+  ($result,$error) = ll_change_reservation($ID,%param);
+
+  ($result,$error) = ll_bind(\@jobsteplist,$ID,$unbind)
+
+  ($result,$error) = ll_remove_reservation(\@IDs,\@user_list,\@host_list,\@group_list)
 
   # Query API functions ( deprecated )
 
@@ -83,6 +93,8 @@ This module provides access to the APIs of the IBM LoadLeveler Workload Manageme
 
 =item * L<Submit|Submit>
 
+=item * L<Reservation|Reservation>
+
 =item * L<Workload Management (partial)|Workload>
 
 =item * Error Handling
@@ -93,7 +105,8 @@ This module is not for the faint hearted.  The LoadLeveler API returns a huge am
 
 =head2 LoadLeveler Versions
 
-This version has been tested with LoadLeveler 3.1.0.16 under AIX 5.1 and various 3.2.0.x versions under AIX 5.2.
+This version has been tested with LoadLeveler 3.1.0.16 under AIX 5.1 and various 3.2.0.x & 3.3.0.x versions under AIX 5.2. Very basic tests have also been tried with 3.2.x versions under Linux.
+
 
 Since LoadLeveler 3.2 does not change the version number in the llapi.h file a crude hack is used to work out what version is installed and only include the appropriate functions and enum values.  If your compile starts spitting out errors like:
 
@@ -190,11 +203,101 @@ These are the changes I know of for arguments to ll_get_data:
  LL_StepStartTime
  LL_StepUserRcxtBlocks
 
+=item * 3.3.0.0
+
+ LL_JobSchedd
+ LL_JobJobQueueKey
+ LL_JobIsRemote
+ LL_JobSchedulingCluster
+ LL_JobSubmittingCluster
+ LL_JobSubmittingUser
+ LL_JobSendingCluster
+ LL_JobRequestedCluster
+ LL_JobLocalOutboundSchedds
+ LL_JobScheddHistory
+ LL_JobGetFirstClusterInputFile
+ LL_JobGetNextClusterInputFile
+ LL_JobGetFirstClusterOutputFile
+ LL_JobGetNextClusterOutputFile
+ LL_StepRequestedReservationID
+ LL_StepReservationID
+ LL_StepPreemptable
+ LL_StepPreemptWaitList
+ LL_StepRsetName
+ LL_StepCkptExecuteDirectory
+ LL_StepAcctKey
+ LL_MachineReservationPermitted
+ LL_MachineReservationList
+ LL_MachinePrestartedStarters
+ LL_MachineCPUList
+ LL_MachineGetFirstMCM
+ LL_MachineGetNextMCM
+ LL_MachineCpuList
+ LL_TaskInstanceMachine
+ LL_TaskInstanceCpuList
+ LL_AdapterMCMId
+ LL_ClusterPreemptionEnabled
+ LL_ClusterSysPrioThreshold
+ LL_ClusterMusterEnvironment
+ LL_ClusterClusterMetric
+ LL_ClusterClusterUserMapper
+ LL_ClusterClusterRemoteJobFilter
+ LL_ReservationID
+ LL_ReservationStartTime
+ LL_ReservationDuration
+ LL_ReservationMachines
+ LL_ReservationJobs
+ LL_ReservationModeShared
+ LL_ReservationModeRemoveOnIdle
+ LL_ReservationStatus
+ LL_ReservationOwner
+ LL_ReservationGroup
+ LL_ReservationCreateTime
+ LL_ReservationModifiedBy
+ LL_ReservationModifyTime
+ LL_ReservationUsers
+ LL_ReservationGroups
+ LL_MClusterName
+ LL_MClusterInboundScheddPort
+ LL_MClusterLocal
+ LL_MClusterInboundHosts
+ LL_MClusterOutboundHosts
+ LL_MClusterIncludeUsers
+ LL_MClusterExcludeUsers
+ LL_MClusterIncludeGroups
+ LL_MClusterExcludeGroups
+ LL_MClusterIncludeClasses
+ LL_MClusterExcludeClasses
+ LL_MClusterSecureScheddPort
+ LL_MClusterMulticlusterSecurity
+ LL_MClusterSslCipherList
+ LL_ClusterFileLocalPath
+ LL_ClusterFileRemotePath
+ LL_MCMID
+ LL_MCMCPUList
+
+=item * 3.3.0.1
+
+ LL_ClusterEnforceMemory
+
+=item * 3.3.0.2
+
+ LL_StepDependency
+ LL_MachineConfigTimeStamp
+
+=item * 3.3.0.4
+
+ LL_AdapterReqInstances
+ LL_AdapterReqReserved01
+ LL_AdapterReqProtocol
+ LL_AdapterReqMode
+ LL_AdapterReqTypeNam
+
 =back
 
 =head2 64 bit types and 32 bit perl
 
-B<ll_get_data> has a whole set of 64 bit return types, this poses a problem for perl when it is compiled in 32 bit mode.  This module will return correct values if the value is than 2^31 otherwise the value will be truncated to 2^31..
+B<ll_get_data> has a whole set of 64 bit return types
 
 =head2 Build/Installation
 

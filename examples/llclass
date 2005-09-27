@@ -125,7 +125,7 @@ while($classes)
 }
 
 # Free up space allocated by LoadLeveler
-ll_free_objs($classes);
+ll_free_objs($query);
 ll_deallocate($query);
 
 sub array2string {

@@ -4,6 +4,7 @@
 #include "XSUB.h"
 
 #include <llapi.h>
+#include <errno.h>
 
 AV * 
 unpack_ll_step_id(id)
@@ -211,7 +212,6 @@ LL_job_step	*job_info;
 	    av_push( processor_list, newSVpv( job_info->processor_list[t], 0 ) );
 	}
     hv_store(step,"processor_list",strlen("processor_list"),newRV((SV *)processor_list),0);
-    
     hv_store(step,"cmd",strlen("cmd"),(newSVpv(job_info->cmd,0)),0);
     hv_store(step,"args",strlen("args"),(newSVpv(job_info->args,0)),0);
     hv_store(step,"env",strlen("env"),(newSVpv(job_info->env,0)),0);
@@ -226,7 +226,7 @@ LL_job_step	*job_info;
     hv_store(step,"notification",strlen("notification"),(newSViv((long)job_info->notification)),0);
     hv_store(step,"image_size",strlen("image_size"),(newSViv((long)job_info->image_size)),0);
     hv_store(step,"exec_size",strlen("exec_size"),(newSViv((long)job_info->exec_size)),0);
-    
+
     limits=(AV *)sv_2mortal((SV *)newAV());
     av_push(limits,newSViv((long)job_info->limits.cpu_hard_limit));
     av_push(limits,newSViv((long)job_info->limits.cpu_soft_limit));
@@ -250,11 +250,22 @@ LL_job_step	*job_info;
     
     nqs_info=(AV *)sv_2mortal((SV *)newAV());
     av_push(nqs_info,newSViv((long)job_info->nqs_info.nqs_flags));
-    av_push(nqs_info,newSVpv(job_info->nqs_info.nqs_submit,0));
-    av_push(nqs_info,newSVpv(job_info->nqs_info.nqs_query,0));
-    av_push(nqs_info,newSVpv(job_info->nqs_info.umask,0));
+    /* Linux version will segfault if these strings are NULL */
+    if ( job_info->nqs_info.nqs_submit == NULL )
+      av_push(nqs_info,newSVpv("",0));
+    else
+      av_push(nqs_info,newSVpv(job_info->nqs_info.nqs_submit,0));
+    if ( job_info->nqs_info.nqs_query == NULL )
+      av_push(nqs_info,newSVpv("",0));
+    else
+      av_push(nqs_info,newSVpv(job_info->nqs_info.nqs_query,0));
+    if ( job_info->nqs_info.umask == NULL )
+      av_push(nqs_info,newSVpv("",0));
+    else
+      av_push(nqs_info,newSVpv(job_info->nqs_info.umask,0));
     hv_store(step,"nqs_info",strlen("nqs_info"),newRV((SV *)nqs_info),0);
-    
+
+
     hv_store(step,"dispatch_time",strlen("dispatch_time"),(newSViv((long)job_info->dispatch_time)),0);
     hv_store(step,"start_time",strlen("start_time"),(newSViv((long)job_info->start_time)),0);
     hv_store(step,"completion_code",strlen("completion_code"),(newSViv((long)job_info->completion_code)),0);
@@ -442,7 +453,7 @@ SV *rv;
 	char **s;
 	int avlen;
 	int x;
-	unsigned long na;
+	/*	unsigned long na; */   /* MH check this */
 
 	if ( ! SvOK( rv ) )
 		return( (char**)NULL );
@@ -475,7 +486,7 @@ SV *rv;
 				if( s[x] == NULL )
 					warn("XS_unpack_charPtrPtr: unable to malloc char*");
 				else
-					strcpy( s[x], SvPV( *ssv, na ) );
+					strcpy( s[x], SvPV_nolen( *ssv) );
 			}
 			else
 				warn("XS_unpack_charPtrPtr: array elem %d was not a string.", x );
@@ -487,6 +498,7 @@ SV *rv;
 	return( s );
 }
 
+#if 0
 static int
 not_here(char *s)
 {
@@ -2827,8 +2839,11 @@ not_there:
     return 0;
 }
 
+#endif
+
 MODULE = IBM::LoadLeveler		PACKAGE = IBM::LoadLeveler
 
+#if 0
 double
 constant(sv,arg)
     PREINIT:
@@ -2842,6 +2857,7 @@ constant(sv,arg)
     OUTPUT:
 	RETVAL
 
+#endif
 
 char *
 ll_version()
@@ -2896,8 +2912,12 @@ ll_get_data(object,Specification)
 	LL_element *object
 	int Specification       
 	PROTOTYPE: $$
+
 	PPCODE:
-	{	switch (Specification)
+	{	
+	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
+/*	    fprintf(stderr,"\nSPECIFICATION = %d\n",Specification);*/
+	    switch (Specification)
 		{
 #if LLVER >= 3020000
 		case LL_AdapterUsageDevice:
@@ -2962,18 +2982,63 @@ ll_get_data(object,Specification)
         	case LL_MachUsageMachineName:
         	case LL_EventUsageEventName:
 		case LL_ColumnMachineName:
+#if LLVER >= 3030000
+		case LL_JobSchedd:
+		case LL_JobSchedulingCluster:
+		case LL_JobSubmittingCluster:
+		case LL_JobSubmittingUser:
+		case LL_JobSendingCluster:
+		case LL_JobRequestedCluster:
+		case LL_StepRequestedReservationID:
+		case LL_StepReservationID:
+		case LL_StepRsetName:
+		case LL_StepCkptExecuteDirectory:
+		case LL_ClusterClusterMetric:
+		case LL_ClusterClusterUserMapper:
+		case LL_ClusterClusterRemoteJobFilter:
+		case LL_ReservationID:
+		case LL_ReservationOwner:
+		case LL_ReservationGroup:
+		case LL_ReservationModifiedBy:
+		case LL_MClusterName:
+		case LL_MClusterInboundHosts:
+		case LL_MClusterOutboundHosts:
+		case LL_MClusterIncludeUsers:
+		case LL_MClusterExcludeUsers:
+		case LL_MClusterIncludeGroups:
+		case LL_MClusterExcludeGroups:
+		case LL_MClusterIncludeClasses:
+		case LL_MClusterExcludeClasses:
+		case LL_MClusterMulticlusterSecurity:
+		case LL_MClusterSslCipherList:
+		case LL_ClusterFileLocalPath:
+		case LL_ClusterFileRemotePath:
+#endif
+#if LLVER >= 3030002
+		case LL_StepDependency:
+#endif
+#if LLVER >= 3030004
+		case LL_AdapterReqProtocol:
+		case LL_AdapterReqMode:
+		case LL_AdapterReqTypeName:
+#endif		
 		    {
 			char *pointer;
 			int   rc;
 
 		    	/* Char * data type */
 		    	rc=ll_get_data(object,Specification,(void *)&pointer);
-		    	/* printf("%d = %s\n",Specification,JobName); */
+		    	/* printf("%d = %s\n",Specification,pointer); */
 		    	if (rc >= 0)
 			{
-			    XPUSHs(sv_2mortal(newSVpv(pointer, 0)));
-			    Safefree(pointer);
-			    XSRETURN(1);
+			  if ( pointer != NULL )
+			  {
+			      XPUSHs(sv_2mortal(newSVpv(pointer, 0)));
+			      Safefree(pointer);
+			      XSRETURN(1);
+			  }
+			  else
+			    XSRETURN_UNDEF;
 			}
 			else
 			    XSRETURN_UNDEF;
@@ -2987,7 +3052,7 @@ ll_get_data(object,Specification)
 		case LL_ClassAdmin: 
 		case LL_ClassNqsQuery: 
 #endif
-#if LLVER >= 3020006
+#if LLVER >= 3020006  && !defined(__linux__)
 		case LL_AdapterUsageTag:
 #endif
        		case LL_MachineAdapterList:
@@ -3001,7 +3066,17 @@ ll_get_data(object,Specification)
         	case LL_ClusterDefinedResources:
         	case LL_ClusterEnforcedResources:
         	case LL_ColumnStepNames:
-		    {
+#if LLVER >= 3030000
+	        case LL_JobLocalOutboundSchedds:
+		case LL_JobScheddHistory:
+		case LL_StepPreemptWaitList:
+		case LL_MachineReservationList:
+		case LL_ReservationMachines:
+		case LL_ReservationJobs:
+		case LL_ReservationUsers:
+		case LL_ReservationGroups:
+#endif    
+		{
 			char **array;
 			char  *pointer;
 			int    i;
@@ -3041,13 +3116,13 @@ ll_get_data(object,Specification)
 		  rc=ll_get_data(object,LL_MachinePoolListSize,(void *)&PoolSize);
 		  if ( rc >= 0 )
 		  {
-		      /* printf("MachinePoolListSize = %ld\n",PoolSize); */
+		      /*printf("MachinePoolListSize = %ld\n",PoolSize); */
 		      rc=ll_get_data(object,Specification,(void *)&array);
 		      if ( rc >= 0 )
 		      {
 			  for(i=0;i!=PoolSize;i++)
 			  {
-			      /*	  printf("Pool %d = %ld\n",i,array[i]); */
+			      /*      	  printf("Pool %d = %ld\n",i,array[i]); */
 			      XPUSHs(sv_2mortal(newSViv((long)array[i])));
 			  }
 			  XSRETURN(PoolSize);
@@ -3065,18 +3140,18 @@ ll_get_data(object,Specification)
 		      int	 i;
 		      
 		      /* First we need to get the Array size from the 
-		       *  LL_MachinePoolListSize
+		       *  LL_AdapterTotalWindowCount
 		       */
 		      rc=ll_get_data(object,LL_AdapterTotalWindowCount,(void *)&count);
 		      if ( rc >= 0 )
 		      {
-			  /* printf("MachinePoolListSize = %ld\n",count); */
+			  /* printf("AdapterTotalWindowCount = %ld\n",count); */
 			  rc=ll_get_data(object,Specification,(void *)&array);
 			  if ( rc >= 0 )
 			  {
 			      for(i=0;i!=count;i++)
 			      {
-				  /*	  printf("Adapter %d = %ld\n",i,array[i]); */
+				  /* printf("Adapter %d = %ld\n",i,array[i]); */
 				  XPUSHs(sv_2mortal(newSViv((long)array[i])));
 			      }
 			      XSRETURN(count);
@@ -3257,6 +3332,9 @@ ll_get_data(object,Specification)
 		case LL_EventUsageStarterMsgrcv64:
 		case LL_EventUsageStarterNsignals64:
 		case LL_EventUsageStarterNvcsw64:
+#if LLVER > 3030000
+		case LL_StepAcctKey:
+#endif
 		    {
 			int64_t value;
 			int     rc;
@@ -3310,16 +3388,31 @@ ll_get_data(object,Specification)
 		case LL_MachUsageGetNextDispUsage:
 		case LL_DispUsageGetFirstEventUsage:
 		case LL_DispUsageGetNextEventUsage:
+#if LLVER > 3030000
+		case LL_JobGetFirstClusterInputFile:
+		case LL_JobGetNextClusterInputFile:
+		case LL_JobGetFirstClusterOutputFile:
+		case LL_JobGetNextClusterOutputFile:
+		case LL_MachineGetFirstMCM:
+		case LL_MachineGetNextMCM:
+		case LL_TaskInstanceMachine:
+#endif
 		    {
 			void *pointer;
 			int   rc;
 
 		    	rc=ll_get_data(object,Specification,(void *)&pointer);
-		    	/*printf("%d = %ld\n",Specification,pointer); */
+		    	/*fprintf(stderr,"%d = %p\n",Specification,pointer); */
+			/* Some functions like LL_MachineGetFirstAdapter can return a rc of 0 and a null pointer */
 			if (rc >= 0)
 			{
+			  if (pointer == NULL )
+			    XSRETURN_UNDEF;
+			  else
+			  {
 			    XPUSHs(sv_2mortal(newSViv((long)pointer)));
 			    XSRETURN(1);
+			  }
 			}
 			else
 			    XSRETURN_UNDEF;
@@ -3329,7 +3422,7 @@ ll_get_data(object,Specification)
 		case LL_JobSubmitTime:
 		case LL_StepCompletionDate:
 		case LL_StepStartDate:
-#if LLVER >= 3020009
+#if LLVER >= 3020009 && !defined(__linux__)
 		case LL_StepStartTime:
 #endif
 		case LL_StepDispatchTime:
@@ -3337,6 +3430,12 @@ ll_get_data(object,Specification)
 		case LL_StepCkptGoodElapseTime:
 		case LL_StepCkptGoodStartTime:
 		case LL_MachineTimeStamp:
+#if LLVER > 3030000
+		case LL_ClusterEnforceSubmission:
+		case LL_ReservationStartTime:
+		case LL_ReservationCreateTime:
+		case LL_ReservationModifyTime:
+#endif
 		    {
 			time_t time;
 			int   rc;
@@ -3359,7 +3458,7 @@ ll_get_data(object,Specification)
 			int   rc;
 
 		    	rc=ll_get_data(object,Specification,(void *)&integer);
-		    	/*printf("%d = %ld\n",Specification,integer); */
+/*		    	fprintf(stderr,"\n%d = %ld ( %d )\n",Specification,integer,rc);*/
 			if (rc >= 0)
 			{
 			    XPUSHs(sv_2mortal(newSViv(integer)));
@@ -3386,11 +3485,24 @@ llsubmit(job_cmd_file, monitor_program,monitor_arg)
 	    int		i;
 	    AV		*steps;
 
+	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
+
+	    /* printf("JCF = %s\n",job_cmd_file); */
 	    rc=llsubmit(job_cmd_file,monitor_program,monitor_arg,&job_info,LL_JOB_VERSION);
+	    /* printf("RC = %d\n",rc); */
 	    if ( rc != 0 )
 		XSRETURN_UNDEF;
 	    else
 	    {
+	      /*
+	       * printf("JOB NAME=%s\n",job_info.job_name);
+	       * printf("JOB OWNER=%s\n",job_info.owner);
+	       * printf("JOB GROUPNAME=%s\n",job_info.groupname);
+	       * printf("JOB UID=%d\n",job_info.uid);
+	       * printf("JOB GID=%d\n",job_info.gid);
+	       * printf("JOB SUB HOST=%s\n",job_info.submit_host);
+	       * printf("JOB STEPS=%d\n",job_info.steps);
+	       */
 		XPUSHs(sv_2mortal(newSVpv(job_info.job_name, 0)));
 		XPUSHs(sv_2mortal(newSVpv(job_info.owner, 0)));
 		XPUSHs(sv_2mortal(newSVpv(job_info.groupname, 0)));
@@ -3409,7 +3521,7 @@ llsubmit(job_cmd_file, monitor_program,monitor_arg)
 		XPUSHs(sv_2mortal(newRV((SV *)steps)));
 		/* All Data now in Perl structures free the LoadLeveler construct */
 		llfree_job_info(&job_info,LL_JOB_VERSION);
-	    }	    
+	    }
 	}
 
 void *
@@ -3422,6 +3534,7 @@ ll_get_jobs()
 	    AV *jobs;
 	    int i;
 
+	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
 	    rc=ll_get_jobs(&info);
 	    if (rc != 0 )
 		XSRETURN_IV(rc);
@@ -3452,6 +3565,7 @@ ll_get_nodes()
 	    AV *nodes;
 	    int i;
 
+	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
 	    rc=ll_get_nodes(&info);
 	    if (rc != 0 )
 		XSRETURN_IV(rc);
@@ -3502,6 +3616,7 @@ ll_modify(modify_op,value_ref,job_id)
 	    int			rc;
 	    char *job_list[2];
 
+	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
             job_list[0] = job_id;
 	    job_list[1] = NULL;
 
@@ -3548,31 +3663,6 @@ ll_modify(modify_op,value_ref,job_id)
 	    rc=ll_modify(LL_API_VERSION,&errObj,cmdp,job_list);
 
 	    if (rc == MODIFY_SUCCESS )
-	    {
-		XSRETURN_IV(rc);
-	    }
-	    else
-	    {
-		XPUSHs(sv_2mortal(newSViv((long)rc)));
-		XPUSHs(sv_2mortal(newSViv((long)errObj)));
-	    } 
-	
-	}
-
-void *
-ll_preempt(job_step,type)
-	char *job_step
-        int    type
-
-
-	PPCODE:
-	{
-	    LL_element *errObj = NULL;
-	    int		rc;
-
-	    rc=ll_preempt(LL_API_VERSION,&errObj,job_step,type);
-
-	    if (rc == API_OK )
 	    {
 		XSRETURN_IV(rc);
 	    }
@@ -3639,3 +3729,285 @@ ll_error(errObj,print_to)
 	OUTPUT:
 		RETVAL
 
+#if !defined(__linux__)
+
+void *
+ll_preempt(job_step,type)
+	char *job_step
+        int    type
+
+
+	PPCODE:
+	{
+	    LL_element *errObj = NULL;
+	    int		rc;
+
+	    rc=ll_preempt(LL_API_VERSION,&errObj,job_step,type);
+
+	    if (rc == API_OK )
+	    {
+		XSRETURN_IV(rc);
+	    }
+	    else
+	    {
+		XPUSHs(sv_2mortal(newSViv((long)rc)));
+		XPUSHs(sv_2mortal(newSViv((long)errObj)));
+	    } 
+	
+	}
+
+#endif
+
+#if LLVER >= 3030000
+void *
+ll_make_reservation(start_time,duration,data_type,data,options,users,groups,group)
+	char  *start_time
+	int    duration
+	int    data_type
+	SV	*data
+	int    options
+	char **users
+	char **groups
+	char  *group
+
+	PPCODE:
+	{
+	    LL_element           *errObj = NULL;
+	    LL_reservation_param  param;
+	    LL_reservation_param *p_param = &param;
+
+	    int rc;
+
+	    /* First Initialize the structure */
+	    rc = ll_init_reservation_param(LL_API_VERSION,&errObj,&p_param);
+	    if ( rc != 0 )
+	    {
+		/* If the init_routine fails send the error code and object back */
+		XPUSHs(sv_2mortal(newSViv((long)rc)));
+		XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+	    }
+	    else		       
+	    {
+		if ( errObj != NULL )
+		{
+		    Safefree(errObj);
+		    errObj=NULL;
+		}
+		param.start_time=start_time;
+		param.duration=duration;
+		param.data_type=data_type;	      
+		/*fprintf(stderr,"Reserving at %s for %d minutes\n",start_time,duration);*/
+		switch (data_type)
+		{
+		    case RESERVATION_BY_NODE:
+		    {
+			int value;
+
+			value=SvIV(data);	
+			/*fprintf(stderr,"Reserving by nodes = %d, %s\n",value,group);*/
+			/* Interface Change from 3.3.0.0 */
+#if LLVER == 3030000
+			param.data=(void *)value;
+#else
+			param.data=&value;
+#endif
+		    }
+		    break;
+		    case RESERVATION_BY_HOSTLIST:
+		    {
+			param.data=XS_unpack_charPtrPtr(data);
+		    }
+		    break;
+		    case RESERVATION_BY_JOBSTEP:
+		    case RESERVATION_BY_JCF:
+		    {
+			char *value;
+			value=SvPV_nolen(data);
+		    	param.data=value;
+			/*fprintf(stderr,"Reserving by JOBSTEP/JCF (%d)= %s\n",data_type,value);*/
+		    }
+		    break;
+		}
+		param.mode=options;
+		param.users=users;
+		param.groups=groups;
+		param.group=group;
+		rc = ll_make_reservation(LL_API_VERSION,&errObj,&p_param);
+		if ( rc == RESERVATION_OK )
+		{
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSVpv(*param.ID, 0)));
+		    Safefree(param.ID);
+		}
+		else
+		{
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+		}
+	   }
+	}
+
+int
+ll_bind(jobsteplist,ID,unbind)
+	char **jobsteplist
+	char  *ID
+	int    unbind
+
+	PPCODE:
+	{
+	    LL_element    *errObj = NULL;
+	    LL_bind_param  param;
+	    LL_bind_param *p_param = &param;
+		
+	    int rc;
+
+	    param.jobsteplist=jobsteplist;
+	    param.ID=ID;
+	    param.unbind=unbind;
+	    rc=ll_bind(LL_API_VERSION,&errObj,&p_param);
+	    if ( rc == RESERVATION_OK)
+	    {
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSViv((long)NULL)));	
+	    }	
+	    else
+	    {
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+	    }
+	}
+
+
+int
+ll_remove_reservation(IDs,user_list,host_list,group_list)
+	char **IDs
+	char **user_list
+	char **host_list
+	char **group_list
+
+	PPCODE:
+	{
+	    LL_element    *errObj = NULL;
+		
+	    int rc;
+
+	    rc=ll_remove_reservation(LL_API_VERSION,&errObj,IDs,user_list,host_list,group_list);
+	    if ( rc == RESERVATION_OK)
+	    {
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSViv((long)NULL)));	
+	    }	
+	    else
+	    {
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+	    }
+	}
+
+
+void *
+ll_change_reservation(ID,param)
+	char  *ID
+	HV    *param
+
+	PPCODE:
+	{
+	    I32	count,len,i;
+	    char *key;
+	    SV  *ptr;
+	    SV  **value;
+	    LL_reservation_change_param *data;
+	    LL_reservation_change_param **p_data;
+	    int rc;
+	    LL_element    *errObj = NULL;
+
+	    count=hv_iterinit(param);
+	  /*  fprintf(stderr,"HV_ITERINIT icount = %i\n",count);*/
+	    /* Make space to store all of the arguments */
+	    data=calloc(count,sizeof(LL_reservation_change_param));
+	    p_data=calloc(count+1,sizeof(LL_reservation_change_param *));
+
+
+	    for(i=0;i!=count;i++)
+	    {
+                p_data[i] = &data[i];
+		ptr=hv_iternextsv(param,&key,&len);
+		if (strncmp(key,"RESERVATION_START_TIME",len) == 0)     { data[i].type=RESERVATION_START_TIME; };
+		if (strncmp(key,"RESERVATION_ADD_START_TIME",len) == 0) { data[i].type=RESERVATION_ADD_START_TIME; };
+		if (strncmp(key,"RESERVATION_DURATION",len) == 0)       { data[i].type=RESERVATION_DURATION; };
+		if (strncmp(key,"RESERVATION_ADD_DURATION",len) == 0)   { data[i].type=RESERVATION_ADD_DURATION; };
+		if (strncmp(key,"RESERVATION_BY_NODE",len) == 0)        { data[i].type=RESERVATION_BY_NODE; };
+		if (strncmp(key,"RESERVATION_ADD_NUM_NODE",len) == 0)   { data[i].type=RESERVATION_ADD_NUM_NODE; };
+		if (strncmp(key,"RESERVATION_BY_HOSTLIST",len) == 0) { data[i].type=RESERVATION_BY_HOSTLIST; };
+		if (strncmp(key,"RESERVATION_ADD_HOSTS",len) == 0)   { data[i].type=RESERVATION_ADD_HOSTS; };
+		if (strncmp(key,"RESERVATION_DEL_HOSTS",len) == 0)   { data[i].type=RESERVATION_DEL_HOSTS; };
+		if (strncmp(key,"RESERVATION_BY_JOBSTEP",len) == 0)  { data[i].type=RESERVATION_BY_JOBSTEP; };
+		if (strncmp(key,"RESERVATION_BY_JCF",len) == 0)      { data[i].type=RESERVATION_BY_JCF; };
+		if (strncmp(key,"RESERVATION_USERLIST",len) == 0)    { data[i].type=RESERVATION_USERLIST; };
+		if (strncmp(key,"RESERVATION_ADD_USERS",len) == 0)   { data[i].type=RESERVATION_ADD_USERS; };
+		if (strncmp(key,"RESERVATION_DEL_USERS",len) == 0)   { data[i].type=RESERVATION_DEL_USERS; };
+		if (strncmp(key,"RESERVATION_GROUPLIST",len) == 0)   { data[i].type=RESERVATION_GROUPLIST; };
+		if (strncmp(key,"RESERVATION_ADD_GROUPS",len) == 0)  { data[i].type=RESERVATION_ADD_GROUPS; };
+		if (strncmp(key,"RESERVATION_DEL_GROUPS",len) == 0)  { data[i].type=RESERVATION_DEL_GROUPS; };
+		if (strncmp(key,"RESERVATION_MODE_SHARED",len) == 0) { data[i].type=RESERVATION_MODE_SHARED; };
+		if (strncmp(key,"RESERVATION_MODE_REMOVE_ON_IDLE",len) == 0) { data[i].type=RESERVATION_MODE_REMOVE_ON_IDLE; };
+		if (strncmp(key,"RESERVATION_OWNER",len) == 0) { data[i].type=RESERVATION_OWNER; };
+		if (strncmp(key,"RESERVATION_GROUP",len) == 0) { data[i].type=RESERVATION_GROUP; };
+/*		fprintf(stderr,"%d = HV_ITERNEXTSV %i,%s,%i\n",i,ptr,key,len); */
+		value=hv_fetch(param,key,len,0);
+		switch(data[i].type)
+		{
+		case RESERVATION_START_TIME:
+		case RESERVATION_BY_JOBSTEP:
+		case RESERVATION_BY_JCF:
+		case RESERVATION_GROUP:
+		case RESERVATION_OWNER:
+		{
+		    data[i].data=SvPV_nolen(*value);
+		  /*  fprintf(stderr,"%d (char *)= %s,%s\n",i,key,data[i].data); */
+		}
+		break;
+		case RESERVATION_BY_HOSTLIST:
+		case RESERVATION_ADD_HOSTS:
+		case RESERVATION_DEL_HOSTS:
+		case RESERVATION_ADD_USERS:
+		case RESERVATION_DEL_USERS:
+		case RESERVATION_GROUPLIST:
+		case RESERVATION_ADD_GROUPS:
+		case RESERVATION_DEL_GROUPS:
+		{		    
+		    data[i].data=XS_unpack_charPtrPtr(*value);
+
+		}
+		break;
+		default :
+		{
+		    int val;
+		    
+		    val=SvIV(*value);
+#if LLVER == 3030000
+		    data[i].data=(void *)val;
+#else
+		    data[i].data=&val;
+#endif
+		  /*  fprintf(stderr,"%d (int*)= %s,%d\n",i,key,val); */
+		}
+		}
+		
+	    }
+	    p_data[count]=NULL;
+	    rc=ll_change_reservation(LL_API_VERSION,&errObj,&ID,p_data);
+	    if ( rc == RESERVATION_OK)
+	    {
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSViv((long)NULL)));	
+	    }	
+	    else
+	    {
+		    XPUSHs(sv_2mortal(newSViv((long)rc)));
+		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+	    }
+
+	}
+
+#endif

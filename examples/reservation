@@ -1,0 +1,116 @@
+# -*- Perl -*-
+
+use IBM::LoadLeveler;
+
+$nodes=1;
+$jobstep="f96n09f.awe.co.uk.206.0";
+$jcf="/home/mike/ll/sub";
+@hosts=( "f96n12g.awe.co.uk", "f962n10g.awe.co.uk");
+
+@groups=( "admins");
+@users=( "mike" );
+$group="debug";
+
+
+# Create a reservation
+
+#($rc,$err) = ll_make_reservation("17:00",60,RESERVATION_BY_JOBSTEP,$jobstep,RESERVATION_SHARED,\@users,\@groups,$group);
+#($rc,$err) = ll_make_reservation("17:00",60,RESERVATION_BY_JCF,$jcf,RESERVATION_SHARED,\@users,\@groups,$group);
+#($rc,$err) = ll_make_reservation("05/24 14:10",60,RESERVATION_BY_HOSTLIST,\@hosts,RESERVATION_SHARED,\@users,\@groups,$group);
+($rc,$res) = ll_make_reservation("22:00",60,RESERVATION_BY_NODE,$nodes,RESERVATION_SHARED,undef,undef,$group);
+
+if ( $rc != 0 )
+{
+    ll_error($res,1);
+    exit 1;
+}
+else
+{
+    print "Made Reservation: $res\n";
+    squery();
+}
+
+# Change it a bit
+
+print "************************************************************\n";
+print "RES = $res\n";
+
+%RES=();
+$RES{"RESERVATION_START_TIME"}="23:01";
+$RES{"RESERVATION_DURATION"}=30;
+($rc,$res)=ll_change_reservation($res,\%RES);
+
+if ( $rc != 0 )
+{
+    ll_error($res,1);
+    exit 1;
+}
+else
+{
+    print "Changed Reservation: $res\n";
+    squery();
+}
+
+
+# Remove all reservations owned by "mike"
+
+$query = ll_query(RESERVATIONS);
+$return = ll_set_request($query, QUERY_ALL, undef, ALL_DATA);
+
+$reservation = ll_get_objs($query, LL_CM, NULL, $number, $err);
+while ($reservation)
+{
+	my $id       = ll_get_data($reservation,LL_ReservationID);
+	my $owner    = ll_get_data($reservation,LL_ReservationOwner);
+	if ( $owner eq "gmhk" )
+	{
+		print "Cancelling reservation $id\n";
+		@IDs=();
+		push @IDs,$id;
+		($rc,$res)=ll_remove_reservation(\@IDs,undef,undef,undef);
+		print "RES = $res\n";
+		ll_error($res,1) if ( $c != 0 );
+	}
+	$reservation = ll_next_obj($query);
+}
+ll_free_objs($reservation);
+ll_deallocate($query);
+print "===========================================================\n";
+
+squery();
+
+sub squery
+{
+    $query = ll_query(RESERVATIONS);
+    $return = ll_set_request($query, QUERY_ALL, undef, ALL_DATA);
+
+    $reservation = ll_get_objs($query, LL_CM, NULL, $number, $err);
+
+    while ($reservation)
+    {
+	my $id       = ll_get_data($reservation,LL_ReservationID);
+	my $start    = ll_get_data($reservation,LL_ReservationStartTime);
+	my $duration = ll_get_data($reservation,LL_ReservationDuration);
+	my @machines = ll_get_data($reservation,LL_ReservationMachines);
+	my @jobs     = ll_get_data($reservation,LL_ReservationJobs);
+	my $shared   = ll_get_data($reservation,LL_ReservationModeShared);
+	my $idle     = ll_get_data($reservation,LL_ReservationModeRemoveOnIdle);
+	my $status   = ll_get_data($reservation,LL_ReservationStatus);
+	my $owner    = ll_get_data($reservation,LL_ReservationOwner);
+	my $group    = ll_get_data($reservation,LL_ReservationGroup);
+	my $create   = ll_get_data($reservation,LL_ReservationCreateTime);
+	my $modby    = ll_get_data($reservation,LL_ReservationModifiedBy);
+	my $modtime  = ll_get_data($reservation,LL_ReservationModifyTime);
+	my @users    = ll_get_data($reservation,LL_ReservationUsers);
+	my @groups   = ll_get_data($reservation,LL_ReservationGroups);
+	print "$id";
+	print ": ",scalar localtime($start);
+	print ": $duration";
+	print ": $status";
+	print ": $owner\n";
+	
+	$reservation = ll_next_obj($query);
+    }
+    ll_free_objs($query);
+    ll_deallocate($query);
+}
