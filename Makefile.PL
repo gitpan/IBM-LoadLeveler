@@ -1,5 +1,9 @@
 use ExtUtils::MakeMaker;
-use English;
+
+# Find out if this is AIX or Linux
+
+my $OS=`/bin/uname`;
+chomp $OS;
 
 #
 # I hope this bit works out the base LoadLeveler version.
@@ -7,83 +11,65 @@ use English;
 # same for 3.1 & 3.2!  I am sure there is a very good reason for this, I don't know
 # what it is, but i'm sure it must be a very good reason.
 #
-#
-# If the code doesn't work out the base version then set it here by hand.
-# The ifdefs expect a 7 digit number, which is the version stripped of dots,
-# all single numbers doubled and leading zeros removed, so if you have
-# version 3.3.0.4 the number will be 3030004
-#
-# $LLVER=3020016
-#
 
-if ( ! defined $LLVER )
+if ( $OS =~ "Linux" )
 {
-    if ( $OSNAME =~ /linux/i )
-    {
-	$LoadL="/opt/ibmll/LoadL/full";
-	$ExtraLibs="-lstdc++"; # stops load failure with error undefined symbol: __gxx_personality_v0
-	
-	# Find the rpm command
-	open(RPM,"whereis -b rpm |");
-	$_=<RPM>;
-	my @binaries = split;
-	my $rpm="";
-	foreach my $bin ( @binaries )
-	{
-	    if ( -f $bin &&  -x $bin )
-	    {
-		$rpm=$bin;
-	    }
-	}
-	close(RPM);
-	if ( $rpm eq "" )
-	{
-	    print STDERR "Whoa, you seem to be running Linux but I can't find the rpm command\n";
-	    print STDERR "You will need to set the \$LLVER variable by hand in Makefile.PL\n";
-	    exit 1;
-	}
+    $LoadL="/opt/ibmll/LoadL/full";
+    $ExtraLibs="-lstdc++"; # stops load failure with error undefined symbol: __gxx_personality_v0
 
-	# This is very slow, is there a better way ?
-
-	my @packages=`$rpm -qa`;
-	foreach my $package (@packages)
-	{
-	    next unless $package=~/LoadL-full/;
-	    my @f=split "-",$package;
-	    $LLVER=$f[$#f-1];
-	}
-	if ( ! defined $LLVER )
-	{
-	    print STDERR "Whoa, I can't find a version number for the LoadL-full- package using \"$rpm -qa\"\n";
-	    print STDERR "You will need to set the \$LLVER variable by hand in Makefile.PL\n";
-	    exit 1;
-	}
-    }
-    elsif  ( $OSNAME =~ /AIX/i )
+    my @packages=`/bin/rpm -qa`;
+    foreach $package (@packages)
     {
-	$LoadL="/usr/lpp/LoadL/full";
-	$ExtraLibs="";
-	
-	#
-	# The code extracts the package version using lslpp.
-	#
-	open(LLVER,"/usr/bin/lslpp -Ou -qlc LoadL.full |");
-	$_=<LLVER>;
-	$_=~/^[^:]+:[^:]+:([^:]+):/;
-	close(LLVER);
+	next unless $package=~/LoadL.*-([\d.]+)-/;
+#	print "$package ----> $1\n";
 	$LLVER=$1;
     }
-    elsif ( $OSNAME =~ /MSWin32/i )
+    # Fudge to try and distingish between xlc and cc compilations of perl
+    my $cflags=$ExtUtils::MakeMaker::Config{"ccflags"};
+    my $cc=$ExtUtils::MakeMaker::Config{"cc"};
+    if ( $cc ne "cc" )
     {
-	print STDERR "You're having a laugh, this looks like a Windows box. Come back when you have a real computer\n";
-	exit 1;
+	$CC=$cc;
     }
     else
     {
-	print STDERR "Whoa, I don't recognise your OS ($OSNAME), so I'm not going to build\n";
-	exit 1;
+	if ( $cflags =~ /GNU_SOURCE/ )
+	{
+	    $CC="gcc";
+	}
+	else
+	{
+	    $CC="xlc";
+	}
+    }
+    # 64 bit required on PowerPC
+    if ( ! defined $ExtUtils::MakeMaker::Config{"use64bitall"} && $ExtUtils::MakeMaker::Config{"archname"} =~ /ppc-linux/)
+    {
+    	print "I'm not totally sure but I think you are trying to build with a 32 bit version of Perl, the llapi is 64 bit\n";	
+	print "This is probably going to end very badly. Sorry\n\n";
     }
 }
+elsif  ( $OS eq "AIX" )
+{
+    $LoadL="/usr/lpp/LoadL/full";
+    $ExtraLibs="";
+    $CC="xlc";
+
+    #
+    # The code extracts the package version using lslpp.
+    #
+    open(LLVER,"/usr/bin/lslpp -Ou -qlc LoadL.full |");
+    $_=<LLVER>;
+    $_=~/^[^:]+:[^:]+:([^:]+):/;
+    close(LLVER);
+    $LLVER=$1;
+}
+else
+{
+	print STDERR "Whoa, I don't recognise your OS ($OS), so I'm not going to build\n";
+	exit 1;
+}
+
 
 #
 # The code converts the package version to a number, eg
@@ -94,7 +80,7 @@ if ( ! defined $LLVER )
 # The final number is used in #ifdef statements
 #
 # The 1 while ..... construct repeatedly runs the doubling search. This is needed
-# because if you watch one .0. then the start for the next search is the first digit
+# because if you match one .0. then the start for the next search is the first digit
 # in the next number. See Page 155 of Camel V3. Alternativly just trust me that it works :)
 #
 
@@ -103,7 +89,9 @@ $LLVER=~s/\.(\d)$/.0\1/;
 $LLVER=~s/\.//g;
 $LLVER=~s/^0(\d+)/\1/;
 
-print "Building for version $LLVER on $OSNAME\n\n";
+print "Building for version $LLVER on $OS\n\n";
+
+process_defs();
 
 WriteMakefile(
     'NAME'		=> 'IBM::LoadLeveler',
@@ -121,11 +109,13 @@ WriteMakefile(
 			     'Query.pod'       => '$(INST_MAN3DIR)/LoadLeveler::Query.$(MAN3EXT)',
 			     'Workload.pod'    => '$(INST_MAN3DIR)/LoadLeveler::Workload.$(MAN3EXT)',
 			     'Reservation.pod' => '$(INST_MAN3DIR)/LoadLeveler::Reservation.$(MAN3EXT)',
+			     'Error.pod'       => '$(INST_MAN3DIR)/LoadLeveler::Error.$(MAN3EXT)',
 			   },
     'LIBS'		=> ["-L$LoadL/lib -lllapi $ExtraLibs"], # e.g., '-lm'
     'DEFINE'		=> "-DLLVER=$LLVER -L$LoadL/lib",
     'INC'		=> "-I$LoadL/include",
     'OBJECT'		=> '$(O_FILES) ',
+    'CC'                => $CC,
     'macro'		=> { LoadL => "$LoadL" },
     'clean'             => { FILES => "llapi.ph" },
 );
@@ -141,7 +131,184 @@ html: LoadLeveler.pm DataAccess.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Submit.html Submit.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Query.html Query.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Workload.html Workload.pod
+	pod2html --noindex --podpath=. --htmlroot=. --outfile=Error.html Error.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=LoadLeveler.html LoadLeveler.pod
 END
     $postamble;
+}
+
+sub process_defs
+{
+
+    my %enums=();
+    my @values=();
+
+    print "Building list of current ll_get_data specifications\n";
+    open(LLAPI,"$LoadL/include/llapi.h") || die "Can't open $LoadL/include/llapi.h $!";
+    # Speed through the file till we find
+    # the LLAPI_Specification enum
+    while ( <LLAPI> )
+    {
+	last if /LLAPI_Specification/;
+    }
+    my $count=0;
+    while ( <LLAPI> )
+    {
+	last if /}/;
+
+	next if /Unused_LL/;
+	next unless /LL/;
+	chomp;
+	# Don't bother with anything that doesn't have a comma in it.
+	next unless /([^,]*),(.*)/;
+
+	my $before=$1;
+	my $after=$2;
+
+	# If the version of C we are using does not support Designated Initializers
+	# we need the enum id number. boo hiss btw
+	$count = $1 if /=\s*(\d+),/;
+
+	# Process the enum
+	# remove leading whitespace
+	$before=~s/^\s+//;
+	# remove everything after a white space
+	$before=~s/\s+.*//;
+	# remove everything after and including an =
+	$before=~s/=.*//;
+	
+	# Process the definition
+
+	$after="NONE" if $after=~/^\s*$/;
+
+	# remove anything up to the start of a type def
+	$after=~s|^.*/\*\s*||;
+	# remove everything after a :
+	$after=~s|:.*||;
+	# or a (
+	$after=~s|\(.*||;
+	# remove anything after a *
+	$after=~s|\*\s+.*|\*|;
+	# strip out C end comments
+	$after=~s|\*/||;
+	$after= uc($after);
+	$after=~s/\s*$//g;
+	$after=~s/\*/_STAR/g;
+	$after=~s/ /_/g;
+	$after=~s/_+/_/g;
+	$after="LL_$after";
+#	print "$count $before  -> $after  ($_)\n";
+
+	$enums{$before}=$after;
+	$values[$count++]=$before;
+    }
+    close(LLAPI);
+
+    print "Generating new definitions array\n";
+    open(DEFS,"defs.h.in") || die "Can't open defs.h.in $!";
+    open(OUT,"> defs.h.new")|| die "Can't open defs.h.new $!";
+
+    #
+    # C99 introduced Designated Initalizers for arrays, meaning you
+    # can do things like:
+    # static int defs[]={
+    #       [LL_StepCheckpointing] = LL_BOOLEAN_STAR,
+    #       [LL_MachineName] = LL_CHAR_STAR,
+    #                   };
+    # Which is very nice since the alternative is to build a very nasty array.
+    #
+    # For now I don't know how to work out if C supports this feature, I do know it
+    # doesn't work on my version of AIX though...
+    #
+    my $UseDesignatedInitializers = 1;
+
+    $UseDesignatedInitializers = 0 if $OS =~ /AIX/;
+
+    # Copy everything out until we get to the array definition
+    while( <DEFS> )
+    {
+	print OUT $_;
+	last if ( $_ =~ /\[\]/ );
+    }
+
+    #
+    # We are now pointing at the definitions in the template array
+    # What I want to do at this point is to read the defs.h.in file
+    # and if I find a line like
+    #       [LL_StepCheckpointing] = LL_BOOLEAN_STAR,
+    # then see if the LL_ thingie was defined in the
+    # include file, if it is write it out, if not don't.
+    #
+    # However this will only work if the Designated Initializers
+    # are supported, otherwise a fully defined array needs to be built
+    #
+    # So, suck my handcranked defs in from the defs.h.in file
+    # and then loop through all enums as slurped out of the
+    # system llapi.h file, @values contains a number to LL_ thingie
+    # which can be used to see if there is anything to print.
+    #
+
+    my %defs=();
+    while ( <DEFS> )
+    {
+	last if ( $_ !~ /\[.*\]/ );
+	# slurp the definition from the file into a hash
+	next unless $_=~/\[(.*)\]\s*=\s*(\S+)\s*\,/;
+	$defs{$1}=$2;
+    }
+
+    for(my $i=0;$i<$count;$i++)
+    {
+	if ( exists $defs{$values[$i]})
+	{
+	    if ( $UseDesignatedInitializers)
+	    {
+		print OUT "\t\[$values[$i]\] = $defs{$values[$i]},\n";
+	#	print "\t\[$values[$i]\] = $defs{$values[$i]},\n";
+	    }
+	    else
+	    {
+		print OUT "$defs{$values[$i]},\n";
+	    }
+	    delete $enums{$values[$i]};
+	    delete $defs{$values[$i]};
+	}
+	else
+	{
+	    print OUT "LL_NONE,\n" if ! $UseDesignatedInitializers;
+	}
+    }
+
+    # Close the array
+    print OUT "};\n";
+    print OUT "\n";
+    close(OUT);
+    close(DEFS);
+
+
+    if  ( scalar keys %enums > 0 )
+    {
+	print "Current llapi.h has the following definitions, add them to defs.h at your own risk:\n\n";
+	foreach my $key ( keys %enums)
+	{
+	    print "[$key] = $enums{$key},\n";
+	}
+	print "\n";
+    }
+    if  ( scalar keys %defs > 0 )
+    {
+	print "defs.h.in has the following definitions not seen in your system llapi.h file.  They have been removed from defs.h:\n\n";
+	foreach my $key ( keys %defs)
+	{
+	    print "[$key] = $defs{$key},\n";
+	}
+	print "\n";
+    }
+
+    if ( -s "defs.h.new" )
+    {
+	unlink "defs.h.old" if ( -f "defs.h.old");
+	rename "defs.h","defs.h.old" if ( -f "defs.h" );
+	rename "defs.h.new","defs.h";
+    }
 }

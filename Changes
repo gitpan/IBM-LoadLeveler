@@ -1,16 +1,28 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+1.06  Fri Oct  6 17:05 2006
+	- Added a few more llapi.h files so some definitions are now correctly
+	  in older versions.
+	- Initialised some variables to stop warnings on plinux.
+	- Simple testing done on plinux
+	- Added code for ll_start_job_ext
+	- Added code for ll_preempt_jobs
+	- Added support for version 3.3.1.0+
+	- Major rewrite to alleviate some problems with version support, 
+          defs.h.in now included 
+        - Added ll_cluster, ll_cluster_auth
+	- Added ll_fair_share
+        - Added $IBM::LoadLeveler::errObj and stopped returning errObj
+        - Modified ll_error
+
 1.05  Fri Aug 26 12:54:00 2005
 	- Added Linux Support
 	- Added support for LoadLeveler 3.3.0.0+
 	- Added llqres and reservation examples
 	- Changed how the export list is built from enums
-	- commented out the code for constants. I'm pretty sure
-	  this isn't needed. To be removed in a later version
-	- On the Linux version some values return NULL strings
-	  explicitly handle these as UNDEF or ""
-	- Added a simple attempt to define symbols from later versions
-	- on older versions.
+	- commented out a chunk of code that was created in the initial build
+          since I don't know what it's for. I'll remove it in a later version
+	  if nobody complains.
 
 1.04  Tue Apr  5 13:00:00 2005
 	- Fixed LL_AdapterWindowList & LL_MachinePoolList.

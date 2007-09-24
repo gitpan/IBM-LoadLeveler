@@ -13,9 +13,6 @@ $job_step  = $ARGV[2];
 #    4 - JOB_CLASS,              /* use char for data     */
 #    5 - ACCOUNT_NO              /* use char for data     */
 
-($rc, $err_obj) = ll_modify($modify_op,\$op_value,$job_step);
+$rc = ll_modify($modify_op,\$op_value,$job_step);
 print "Return : $rc\n";
-if ($err_obj)
-{
-  ll_error($err_obj,1);
-}
+ll_error(1) if ($rc != 0)

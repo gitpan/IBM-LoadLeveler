@@ -3,6 +3,7 @@ Changes
 LoadLeveler.pm
 LoadLeveler.pod
 LoadLeveler.xs
+defs.h.in
 MANIFEST
 Makefile.PL
 README
@@ -11,6 +12,7 @@ DataAccess.pod
 Reservation.pod
 Submit.pod
 Workload.pod
+Error.pod
 TODO
 examples/cluster
 examples/getprocid
@@ -35,8 +37,8 @@ examples/llqres
 examples/reservation
 t/00use.t
 t/01version.t
-t/02data_access.t
-t/03submit.t
+t/02submit.t
+t/03data_access.t
 t/04int_types.t
 typemap
 META.yml                                 Module meta-data (added by MakeMaker)

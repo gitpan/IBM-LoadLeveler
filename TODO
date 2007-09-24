@@ -1,4 +1,2 @@
-- Test under Linux
-- Implement:
-	o ll_start_job_ext 
-	o ll_preempt_jobs
+- Improve test suite
+- Do something with Error Object

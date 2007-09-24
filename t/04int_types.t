@@ -2,58 +2,56 @@
 # `make test'. After `make install' it should work as `perl t/02data_access.t'
 
 
-#########################
-# change 'tests => 1' to 'tests => last_test_to_print';
-
-use Test;
-BEGIN { plan tests => 7 };
+use Test::More tests => 8;
 use IBM::LoadLeveler;
 
 #########################
 
 # Make a Query Object
 $query = ll_query(MACHINES);
-printf  "%sok 1\n", defined $query ? '' : 'not ';
+ok(defined $query,"ll_query on MACHINES returned");
 
 # Make a request Object
 $return=ll_set_request($query,QUERY_ALL,undef,ALL_DATA);
-printf  "%sok 2\n", $return == 0 ? '' : 'not ';
+ok($return == 0,"ll_set_request for QUERY_ALL");
 
 # Make the request
 $number=0;
 $err=0;
-$mach=ll_get_objs($query,LL_CM,NULL,$number,$err);
-printf  "%sok 3\n", $number > 0 ? '' : 'not ';
+my $mach=ll_get_objs($query,LL_CM,NULL,$number,$err);
+ok($number > 0,"Get a machine list");
 	
 # Extract Pool List
-$size = ll_get_data($mach, LL_MachinePoolListSize);
-printf  "%sok 4\n", defined  $size ? '' : 'not ';
-@poolList = ll_get_data($mach, LL_MachinePoolList);
-printf  "%sok 5\n", $#poolList == $size-1 ? '' : 'not ';
-
-# Find an adapter with more than one window
-
-$adapter = ll_get_data($mach, LL_MachineGetFirstAdapter);
-if ( defined $adapter )
+my $size = ll_get_data($mach, LL_MachinePoolListSize);
+ok(defined $size,"Get MachinePoolListSize = $size");
+SKIP:
 {
+	skip( 'Unable to get a machine pool list size', 4) if ! defined $size || $size == 0;
+
+	my @poolList = ll_get_data($mach, LL_MachinePoolList);
+	ok($#poolList == $size-1,"Get the machine pool list");
+
+	# Find an adapter with more than one window
+
+	my $adapter = ll_get_data($mach, LL_MachineGetFirstAdapter);
+	ok(defined $adapter,"Get the first adapter");
+
 	while ( ll_get_data($adapter, LL_AdapterTotalWindowCount) == 0 )
 	{
 		$adapter = ll_get_data($mach, LL_MachineGetNextAdapter);
-		print STDERR "ADAP = $adapter\n";
-		last if ! $adapter
 	}
-	$size = ll_get_data($adapter, LL_AdapterTotalWindowCount);
-	printf  "%sok 6\n", defined  $size ? '' : 'not ';
-	@list = ll_get_data($adapter, LL_AdapterWindowList);
-	printf  "%sok 7\n", $#list == $size-1 ? '' : 'not ';
-}
-else
-{
-	print STDERR "\nUnable to find an adapter, skipping tests 6-7\n";
-	printf  "ok 6\n";
-	printf  "ok 7\n";
-}
+	if ( defined $adapter )
+	{
+		$size = ll_get_data($adapter, LL_AdapterTotalWindowCount);
+		ok(defined $size,"Get adapter window count");
+	}
 
+	if ( defined $size )
+	{
+    		@list = ll_get_data($adapter, LL_AdapterWindowList);
+    		ok($#list == $size-1,"Get Adapter Window List");
+	}
+}
 # Tidy up at the end
 ll_free_objs($query);
 ll_deallocate($query);

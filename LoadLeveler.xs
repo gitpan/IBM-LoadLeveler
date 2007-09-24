@@ -1,10 +1,12 @@
-/* -*- C -*-  */
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
 
 #include <llapi.h>
 #include <errno.h>
+
+#include "defs.h"
 
 AV * 
 unpack_ll_step_id(id)
@@ -205,13 +207,13 @@ LL_job_step	*job_info;
     hv_store(step,"q_date",strlen("q_date"),(newSViv((long)job_info->q_date)),0);
     hv_store(step,"status",strlen("status"),(newSViv((long)job_info->status)),0);
     hv_store(step,"num_processors",strlen("num_processors"),(newSViv((long)job_info->num_processors)),0);
-    
     processor_list=(AV *)sv_2mortal((SV *)newAV());
     for(t=0;t!=job_info->num_processors;t++)
 	{     
 	    av_push( processor_list, newSVpv( job_info->processor_list[t], 0 ) );
 	}
     hv_store(step,"processor_list",strlen("processor_list"),newRV((SV *)processor_list),0);
+    
     hv_store(step,"cmd",strlen("cmd"),(newSVpv(job_info->cmd,0)),0);
     hv_store(step,"args",strlen("args"),(newSVpv(job_info->args,0)),0);
     hv_store(step,"env",strlen("env"),(newSVpv(job_info->env,0)),0);
@@ -226,7 +228,6 @@ LL_job_step	*job_info;
     hv_store(step,"notification",strlen("notification"),(newSViv((long)job_info->notification)),0);
     hv_store(step,"image_size",strlen("image_size"),(newSViv((long)job_info->image_size)),0);
     hv_store(step,"exec_size",strlen("exec_size"),(newSViv((long)job_info->exec_size)),0);
-
     limits=(AV *)sv_2mortal((SV *)newAV());
     av_push(limits,newSViv((long)job_info->limits.cpu_hard_limit));
     av_push(limits,newSViv((long)job_info->limits.cpu_soft_limit));
@@ -247,26 +248,41 @@ LL_job_step	*job_info;
     av_push(limits,newSViv((long)job_info->limits.ckpt_time_hard_limit));
     av_push(limits,newSViv((long)job_info->limits.ckpt_time_soft_limit));
     hv_store(step,"limits",strlen("limits"),newRV((SV *)limits),0);
-    
+
+    /* strlen on linux causes a segfault on undefined values, which the following 
+     * typically are. newSVpvn differs from newSVpv in that it can take a NULL value
+     */ 
     nqs_info=(AV *)sv_2mortal((SV *)newAV());
     av_push(nqs_info,newSViv((long)job_info->nqs_info.nqs_flags));
-    /* Linux version will segfault if these strings are NULL */
-    if ( job_info->nqs_info.nqs_submit == NULL )
-      av_push(nqs_info,newSVpv("",0));
+    if (job_info->nqs_info.nqs_submit == NULL)
+    {
+      av_push(nqs_info,newSVpvn(NULL,0));
+    }
     else
+    {
       av_push(nqs_info,newSVpv(job_info->nqs_info.nqs_submit,0));
-    if ( job_info->nqs_info.nqs_query == NULL )
-      av_push(nqs_info,newSVpv("",0));
+    }
+
+    if (job_info->nqs_info.nqs_query == NULL)
+    {
+        av_push(nqs_info,newSVpvn(NULL,0));
+    }
     else
+    {
       av_push(nqs_info,newSVpv(job_info->nqs_info.nqs_query,0));
-    if ( job_info->nqs_info.umask == NULL )
-      av_push(nqs_info,newSVpv("",0));
+    }
+    if (job_info->nqs_info.umask == NULL)
+    {
+      av_push(nqs_info,newSVpvn(NULL,0));
+    }
     else
+    {
       av_push(nqs_info,newSVpv(job_info->nqs_info.umask,0));
+    }
     hv_store(step,"nqs_info",strlen("nqs_info"),newRV((SV *)nqs_info),0);
-
-
+    
     hv_store(step,"dispatch_time",strlen("dispatch_time"),(newSViv((long)job_info->dispatch_time)),0);
+
     hv_store(step,"start_time",strlen("start_time"),(newSViv((long)job_info->start_time)),0);
     hv_store(step,"completion_code",strlen("completion_code"),(newSViv((long)job_info->completion_code)),0);
     hv_store(step,"completion_date",strlen("completion_date"),(newSViv((long)job_info->completion_date)),0);
@@ -282,7 +298,6 @@ LL_job_step	*job_info;
     hv_store(step,"adapter_used_memory",strlen("adapter_used_memory"),(newSViv((long)job_info->adapter_used_memory)),0);
     hv_store(step,"adapter_req_count",strlen("adapter_req_count"),(newSViv((long)job_info->adapter_req_count)),0);
 /*  void  **adapter_req;  adapter requirements - step->getFirstAdapterReq() ...  */
-    
  
     hv_store(step,"image_size64",strlen("image_size64"),(newSViv(job_info->image_size64)),0);
     hv_store(step,"exec_size64",strlen("exec_size64"),(newSViv(job_info->exec_size64)),0);
@@ -2914,563 +2929,344 @@ ll_get_data(object,Specification)
 	PROTOTYPE: $$
 
 	PPCODE:
-	{	
-	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
-/*	    fprintf(stderr,"\nSPECIFICATION = %d\n",Specification);*/
-	    switch (Specification)
+        {
+	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
+	    /*fprintf(stderr,"\nSPECIFICATION = %d\n",Specification);*/
+	    switch (defs[Specification])
+	    {
+	        case LL_CHAR_STAR_STAR:
 		{
-#if LLVER >= 3020000
-		case LL_AdapterUsageDevice:
-		case LL_ClassName:
-		case LL_ClassNqsSubmit:
-		case LL_ClassComment:
-		case LL_ClassCkptDir:
-		case LL_ClassPreemptClass:
-		case LL_ClassStartClass:
-		case LL_TaskInstanceMachineAddress:
-#endif
-		case LL_JobManagementInteractiveClass:
-		case LL_JobManagementAccountNo:
-        	case LL_JobName:
-        	case LL_JobSubmitHost:
-        	case LL_StepAccountNumber:
-        	case LL_StepComment:
-        	case LL_StepEnvironment:
-        	case LL_StepErrorFile:
-        	case LL_StepHostName:
-        	case LL_StepID:
-        	case LL_StepInputFile:
-        	case LL_StepIwd:
-        	case LL_StepJobClass:
-        	case LL_StepMessages:
-        	case LL_StepName:
-        	case LL_StepOutputFile:
-        	case LL_StepShell:
-        	case LL_StepHostList:
-        	case LL_StepLoadLevelerGroup:
-        	case LL_StepTaskGeometry:
-        	case LL_StepTotalNodesRequested:
-        	case LL_StepCkptFile:
-        	case LL_StepLargePage:
-		case LL_MachineArchitecture:
-		case LL_MachineMachineMode:
-		case LL_MachineName:
-        	case LL_MachineOperatingSystem:
-        	case LL_MachineStartdState:
-		case LL_MachineStartExpr:
-        	case LL_MachineSuspendExpr:
-        	case LL_MachineContinueExpr:
-        	case LL_MachineVacateExpr:
-        	case LL_MachineKillExpr:
-        	case LL_NodeRequirements:
-        	case LL_NodeInitiatorCount:
-        	case LL_TaskExecutable:
-        	case LL_TaskExecutableArguments:
-        	case LL_TaskInstanceMachineName:
-        	case LL_AdapterInterfaceAddress:
-        	case LL_AdapterName:
-        	case LL_AdapterUsageProtocol:
-        	case LL_AdapterCommInterface:
-        	case LL_AdapterUsageMode:
-        	case LL_AdapterUsageAddress:
-       	 	case LL_CredentialGroupName:
-        	case LL_CredentialUserName:
-        	case LL_AdapterReqUsage:
-		case LL_ClusterSchedulerType:
-        	case LL_ResourceName:
-        	case LL_ResourceRequirementName:
-        	case LL_MachUsageMachineName:
-        	case LL_EventUsageEventName:
-		case LL_ColumnMachineName:
-#if LLVER >= 3030000
-		case LL_JobSchedd:
-		case LL_JobSchedulingCluster:
-		case LL_JobSubmittingCluster:
-		case LL_JobSubmittingUser:
-		case LL_JobSendingCluster:
-		case LL_JobRequestedCluster:
-		case LL_StepRequestedReservationID:
-		case LL_StepReservationID:
-		case LL_StepRsetName:
-		case LL_StepCkptExecuteDirectory:
-		case LL_ClusterClusterMetric:
-		case LL_ClusterClusterUserMapper:
-		case LL_ClusterClusterRemoteJobFilter:
-		case LL_ReservationID:
-		case LL_ReservationOwner:
-		case LL_ReservationGroup:
-		case LL_ReservationModifiedBy:
-		case LL_MClusterName:
-		case LL_MClusterInboundHosts:
-		case LL_MClusterOutboundHosts:
-		case LL_MClusterIncludeUsers:
-		case LL_MClusterExcludeUsers:
-		case LL_MClusterIncludeGroups:
-		case LL_MClusterExcludeGroups:
-		case LL_MClusterIncludeClasses:
-		case LL_MClusterExcludeClasses:
-		case LL_MClusterMulticlusterSecurity:
-		case LL_MClusterSslCipherList:
-		case LL_ClusterFileLocalPath:
-		case LL_ClusterFileRemotePath:
-#endif
-#if LLVER >= 3030002
-		case LL_StepDependency:
-#endif
-#if LLVER >= 3030004
-		case LL_AdapterReqProtocol:
-		case LL_AdapterReqMode:
-		case LL_AdapterReqTypeName:
-#endif		
-		    {
-			char *pointer;
-			int   rc;
+		    char *pointer;
+		    int   rc;
 
-		    	/* Char * data type */
-		    	rc=ll_get_data(object,Specification,(void *)&pointer);
-		    	/* printf("%d = %s\n",Specification,pointer); */
-		    	if (rc >= 0)
-			{
-			  if ( pointer != NULL )
+		    rc=ll_get_data(object,Specification,(void *)&pointer);
+		    /*fprintf(stderr,"%d = %s\n",Specification,pointer);*/
+		    if (rc >= 0)
+		    {
+		        XPUSHs(sv_2mortal(newSVpv(pointer, 0)));
+			Safefree(pointer);
+			XSRETURN(1);
+		    }
+		    else
+		        XSRETURN_UNDEF;
+		}
+		break ;
+	        case LL_BOOLEAN_STAR:
+	        case LL_INT_STAR:
+		{
+		    int integer;
+		    int rc;
+
+		    rc=ll_get_data(object,Specification,(void *)&integer);
+		    /* fprintf(stderr,"\n%d = %d ( %d )\n",Specification,integer,rc);*/
+		    if (rc >= 0)
+		    {
+			XPUSHs(sv_2mortal(newSViv(integer)));
+			XSRETURN(1);
+		    }
+		    else
+		      XSRETURN_UNDEF;
+		}
+		break;
+	        case  LL_TIME_T_STAR:
+		{
+		    time_t time;
+		    int   rc;
+		    
+		    rc=ll_get_data(object,Specification,(void *)&time);
+		    /*fprintf(stderr,"%d = %ld\n",Specification,time); */
+		    if (rc >= 0)
+		    {
+		        XPUSHs(sv_2mortal(newSViv((long)time)));
+			XSRETURN(1);
+		    }
+		    else
+		        XSRETURN_UNDEF;
+		}
+		break ;
+	        case LL_CHAR_STAR:
+		{
+		    /* char * type ( A single Character ) */
+		    char value;
+		    int   rc;
+
+		    rc=ll_get_data(object,Specification,(void *)&value);
+		    /*fprintf(stderr,"\n%d = %c ( %d )\n",Specification,value,rc)*/;
+		    if (rc >= 0)
+		    {
+		        XPUSHs(sv_2mortal(newSViv(value)));
+			XSRETURN(1);
+		    }
+		    else
+		      XSRETURN_UNDEF;		    
+		}
+		break ;
+	        case LL_UINT64_T_STAR:
+	        case LL_INT64_T_STAR:
+		{
+		    int64_t value;
+		    int     rc;
+		
+		    rc=ll_get_data(object,Specification,&value);
+		    /*		    	printf("%d = %lld\n",Specification,value);*/
+		    if (rc >= 0)
+		    {
+		        XPUSHs(sv_2mortal(newSViv(value)));
+			XSRETURN(1);
+		    }
+		    else
+		        XSRETURN_UNDEF;
+		}
+		break ;
+	        case LL_DOUBLE_STAR:
+		{ 
+		    double value;
+		    int rc;
+		
+		    rc=ll_get_data(object,Specification,(void *)&value);
+		    /* printf("%d = %f\n",Specification,value); */
+		    if (rc >= 0)
+		    {
+		        XPUSHs(sv_2mortal(newSVnv(value)));
+		        XSRETURN(1);
+		    }
+		    else
+		      XSRETURN_UNDEF;
+		}
+		break;
+	        case LL_LL_ELEMENT_STAR:
+		{
+		  void *pointer;
+		  int   rc;
+		
+		rc=ll_get_data(object,Specification,(void *)&pointer);
+		/*		fprintf(stderr,"LLXS INTERNAL: %d = %ld -> %d\n",Specification,pointer,rc); */
+		if (rc >= 0)
+		{
+		    XPUSHs(sv_2mortal(newSViv((long)pointer)));
+		    XSRETURN(1);
+		}
+		else
+		    XSRETURN_UNDEF;
+	      }
+	      break ;
+	      case LL_CHAR_STAR_STAR_STAR:
+	      {
+		  switch(Specification)
+		  {
+#if LLVER >= 3030100	    
+		      case LL_FairShareEntryNames:
+		      {
+		          /* char *** data type (array of strings) */
+			  char **array;
+			  int    i;
+			  int    rc;
+			  int    size;
+
+			  rc=ll_get_data(object,LL_FairShareNumberOfEntries,(void *)&size);
+			  if ( rc >= 0 )
 			  {
-			      XPUSHs(sv_2mortal(newSVpv(pointer, 0)));
-			      Safefree(pointer);
-			      XSRETURN(1);
+			      rc=ll_get_data(object,Specification,(void *)&array);
+			      if ( rc >= 0 && array)
+			      {
+				  for(i=0; array[i];i++)
+				  {
+				      /* 	printf("%d = %d  %p -> %s\n",Specification,index,&array[i],array[i]); */
+				      /*   	printf("%d = %d -> %s\n",Specification,index,array[i]); */
+				      XPUSHs(sv_2mortal(newSVpv(array[i], 0)));
+				  }
+				  Safefree(array);
+				  XSRETURN(i);
+			      }
+			      else
+				XSRETURN_UNDEF;
 			  }
 			  else
 			    XSRETURN_UNDEF;
-			}
-			else
-			    XSRETURN_UNDEF;
-		    }
-		    break ;
-#if LLVER >= 3020000
-		case LL_ClassExcludeUsers: 
-		case LL_ClassIncludeUsers: 
-		case LL_ClassExcludeGroups: 
-		case LL_ClassIncludeGroups: 
-		case LL_ClassAdmin: 
-		case LL_ClassNqsQuery: 
-#endif
-#if LLVER >= 3020006  && !defined(__linux__)
-		case LL_AdapterUsageTag:
-#endif
-       		case LL_MachineAdapterList:
-        	case LL_MachineAvailableClassList:
-        	case LL_MachineFeatureList:
-        	case LL_MachineConfiguredClassList:
-        	case LL_MachineStepList:
-        	case LL_MachineDrainingClassList:
-        	case LL_MachineDrainClassList:
-        	case LL_ClusterSchedulingResources:
-        	case LL_ClusterDefinedResources:
-        	case LL_ClusterEnforcedResources:
-        	case LL_ColumnStepNames:
-#if LLVER >= 3030000
-	        case LL_JobLocalOutboundSchedds:
-		case LL_JobScheddHistory:
-		case LL_StepPreemptWaitList:
-		case LL_MachineReservationList:
-		case LL_ReservationMachines:
-		case LL_ReservationJobs:
-		case LL_ReservationUsers:
-		case LL_ReservationGroups:
-#endif    
-		{
-			char **array;
-			char  *pointer;
-			int    i;
-			int    rc;
-
-		    	/* array of char * data type */
-			rc=ll_get_data(object,Specification,(void *)&array);
-			if ( rc >= 0 )
-			{
-			    pointer=*array;
-			    i=0;
-			    while (pointer != NULL)
-			    {
-				/* printf("%d = %s\n",Specification,pointer); */
-				XPUSHs(sv_2mortal(newSVpv(pointer, 0)));
-				i++;
-				Safefree(pointer);
-				pointer=*(array+i);
-			    }
-			    Safefree(array);
-			    XSRETURN(i);
-			}
-			else
-			    XSRETURN_UNDEF;
-		    }
-		    break ;
-	      case LL_MachinePoolList:
-	      {
-		  int    rc;
-		  int	 PoolSize;
-		  int	 *array;
-		  int	 i;
-
-		  /* First we need to get the Array size from the 
-		   *  LL_MachinePoolListSize
-		   */
-		  rc=ll_get_data(object,LL_MachinePoolListSize,(void *)&PoolSize);
-		  if ( rc >= 0 )
-		  {
-		      /*printf("MachinePoolListSize = %ld\n",PoolSize); */
-		      rc=ll_get_data(object,Specification,(void *)&array);
-		      if ( rc >= 0 )
-		      {
-			  for(i=0;i!=PoolSize;i++)
-			  {
-			      /*      	  printf("Pool %d = %ld\n",i,array[i]); */
-			      XPUSHs(sv_2mortal(newSViv((long)array[i])));
-			  }
-			  XSRETURN(PoolSize);
+			  
 		      }
-		  }
-		  break;
-	      }
-#if LLVER >= 3020000
-	      case LL_AdapterWindowList:
-	          {
-
-		      int    rc;
-		      int	 count;
-		      int	 *array;
-		      int	 i;
-		      
-		      /* First we need to get the Array size from the 
-		       *  LL_AdapterTotalWindowCount
-		       */
-		      rc=ll_get_data(object,LL_AdapterTotalWindowCount,(void *)&count);
-		      if ( rc >= 0 )
+		      break;
+		      case LL_BgPartitionBPList:
+		      case LL_BgPartitionNodeCardList:
 		      {
-			  /* printf("AdapterTotalWindowCount = %ld\n",count); */
+		          /* char *** data type (array of strings) */
+			  char **array;
+			  int    i;
+			  int    rc;
+
+			  rc=ll_get_data(object,Specification,(void *)&array);
+			  if ( rc >= 0 && array)
+			  {
+			      for(i=0; array[i];i++)
+			      {
+				  /* 	printf("%d = %d  %p -> %s\n",Specification,index,&array[i],array[i]); */
+				  /* 	printf("%d = %d -> %s\n",Specification,index,array[i]); */
+				  XPUSHs(sv_2mortal(newSVpv(array[i], 0)));
+			      }
+			      Safefree(array);
+			      XSRETURN(i);
+			  }
+			  else
+			      XSRETURN_UNDEF;
+		      }
+		      break;
+#endif
+		      default:
+		      {
+			  /* char *** data type (array of strings) */
+			  char **array;
+			  char  *pointer;
+			  int    i;
+			  int    rc;
+
+			  rc=ll_get_data(object,Specification,(void *)&array);
+			  if ( rc >= 0 )
+			  {
+			      pointer=*array;
+			      i=0;
+			      while (pointer != NULL)
+			      {
+				  /* printf("%d = %s\n",Specification,pointer); */
+				  /* printf("%d = %p %s\n",Specification,array+i,pointer); */
+				  XPUSHs(sv_2mortal(newSVpv(pointer, 0)));
+				  i++;
+				  Safefree(pointer);
+				  pointer=*(array+i);
+			      }
+			      Safefree(array);
+			      XSRETURN(i);
+			  }
+			  else
+			      XSRETURN_UNDEF;
+		      }
+		      break ;
+		    }
+	      }
+	      break;
+	      case LL_INT_STAR_STAR:
+	      {
+		  switch (Specification)
+		  {
+		      case LL_MachinePoolList:
+		      {
+			    int    rc;
+			    int	 PoolSize;
+			    int	 *array;
+			    int	 i;
+
+			    /* First we need to get the Array size from the 
+			     *  LL_MachinePoolListSize
+			     */
+			    rc=ll_get_data(object,LL_MachinePoolListSize,(void *)&PoolSize);
+			    if ( rc >= 0 )
+			    {
+			        /*printf("MachinePoolListSize = %ld\n",PoolSize); */
+			        rc=ll_get_data(object,Specification,(void *)&array);
+				if ( rc >= 0 )
+				{
+				    for(i=0;i!=PoolSize;i++)
+				    {
+				        /*      	  printf("Pool %d = %ld\n",i,array[i]); */
+				        XPUSHs(sv_2mortal(newSViv((long)array[i])));
+				    }
+				    XSRETURN(PoolSize);
+				}
+			    }
+			    break;
+		      }
+#if LLVER >= 3020000
+		      case LL_AdapterWindowList:
+		      {
+
+			  int    rc;
+			  int	 count;
+			  int	 *array;
+			  int	 i;
+		      
+			  /* First we need to get the Array size from the 
+			   *  LL_AdapterTotalWindowCount
+			   */
+			  rc=ll_get_data(object,LL_AdapterTotalWindowCount,(void *)&count);
+			  if ( rc >= 0 )
+			  {
+			      /* printf("AdapterTotalWindowCount = %ld\n",count); */
+			    rc=ll_get_data(object,Specification,(void *)&array);
+			    if ( rc >= 0 )
+			    {
+			        for(i=0;i!=count;i++)
+				{
+				    /* printf("Adapter %d = %ld\n",i,array[i]); */
+				    XPUSHs(sv_2mortal(newSViv((long)array[i])));
+			        }
+				XSRETURN(count);
+			    }
+			  }
+		      }
+		      break;
+#endif
+#if LLVER >= 3030100
+		      case LL_BgBPLocation:
+		      case LL_BgMachineSize:
+		      case LL_MachineUsedCPUList:
+		      case LL_StepBgShapeAllocated:
+		      case LL_StepBgShapeRequested:
+		      {
+
+			  int    rc;
+			  int    count;
+			  int    *array;
+			  int    i;
+		      
+			  count=3;
 			  rc=ll_get_data(object,Specification,(void *)&array);
 			  if ( rc >= 0 )
 			  {
 			      for(i=0;i!=count;i++)
 			      {
-				  /* printf("Adapter %d = %ld\n",i,array[i]); */
+				  /* printf("Specification %d %d = %ld\n",Specification,i,array[i]); */
 				  XPUSHs(sv_2mortal(newSViv((long)array[i])));
 			      }
 			      XSRETURN(count);
 			  }
 		      }
-		  }
-		  break;
-#endif
-		case LL_MachineLoadAverage:
-        	case LL_MachineSpeed:
-        	case LL_MachUsageMachineSpeed:
-		    {
-			double value;
-			int rc;
-
-		    	rc=ll_get_data(object,Specification,(void *)&value);
-		    	/* printf("%d = %f\n",Specification,value); */
-			if (rc >= 0)
-			{
-			    XPUSHs(sv_2mortal(newSVnv(value)));
-			    XSRETURN(1);
-			}
-			else
-			    XSRETURN_UNDEF;
-		    }
-		    break;
-#if LLVER >= 3020000
-		case LL_AdapterUsageWindowMemory64:
-		case LL_AdapterMinWindowSize64:
-		case LL_AdapterMaxWindowSize64:
-		case LL_AdapterMemory64:
-		case LL_ClassCkptTimeHardLimit:
-		case LL_ClassCkptTimeSoftLimit:
-		case LL_ClassWallClockLimitHard:
-		case LL_ClassWallClockLimitSoft:
-		case LL_ClassCpuStepLimitHard:
-		case LL_ClassCpuStepLimitSoft:
-		case LL_ClassCpuLimitHard:
-		case LL_ClassCpuLimitSoft:
-		case LL_ClassDataLimitHard:
-		case LL_ClassDataLimitSoft:
-		case LL_ClassCoreLimitHard:
-		case LL_ClassCoreLimitSoft:
-		case LL_ClassFileLimitHard:
-		case LL_ClassFileLimitSoft:
-		case LL_ClassStackLimitHard:
-		case LL_ClassStackLimitSoft:
-		case LL_ClassRssLimitHard:
-		case LL_ClassRssLimitSoft:
-#endif
-        	case LL_StepImageSize64:
-		case LL_StepCpuLimitHard64:
-		case LL_StepCpuLimitSoft64:
-		case LL_StepCpuStepLimitHard64:
-		case LL_StepCpuStepLimitSoft64:
-		case LL_StepCoreLimitHard64:
-		case LL_StepCoreLimitSoft64:
-		case LL_StepDataLimitHard64:
-		case LL_StepDataLimitSoft64:
-		case LL_StepFileLimitHard64:
-		case LL_StepFileLimitSoft64:
-		case LL_StepRssLimitHard64:
-		case LL_StepRssLimitSoft64:
-		case LL_StepStackLimitHard64:
-		case LL_StepStackLimitSoft64:
-		case LL_StepWallClockLimitHard64:
-		case LL_StepWallClockLimitSoft64:
-		case LL_StepStepUserTime64:
-		case LL_StepStepSystemTime64:
-		case LL_StepStepMaxrss64:
-		case LL_StepStepIxrss64:
-		case LL_StepStepIdrss64:
-		case LL_StepStepIsrss64:
-		case LL_StepStepMinflt64:
-		case LL_StepStepMajflt64:
-		case LL_StepStepNswap64:
-		case LL_StepStepInblock64:
-		case LL_StepStepOublock64:
-		case LL_StepStepMsgsnd64:
-		case LL_StepStepMsgrcv64:
-		case LL_StepStepNsignals64:
-		case LL_StepStepNvcsw64:
-		case LL_StepStepNivcsw64:
-		case LL_StepStarterUserTime64:
-		case LL_StepStarterSystemTime64:
-		case LL_StepStarterMaxrss64:
-		case LL_StepStarterIxrss64:
-		case LL_StepStarterIdrss64:
-		case LL_StepStarterIsrss64:
-		case LL_StepStarterMinflt64:
-		case LL_StepStarterMajflt64:
-		case LL_StepStarterNswap64:
-		case LL_StepStarterInblock64:
-		case LL_StepStarterOublock64:
-		case LL_StepStarterMsgsnd64:
-		case LL_StepStarterMsgrcv64:
-		case LL_StepStarterNsignals64:
-		case LL_StepStarterNvcsw64:
-		case LL_StepStarterNivcsw64:
-		case LL_StepCkptTimeHardLimit64:
-		case LL_StepCkptTimeSoftLimit64:
-		case LL_MachineDisk64:
-		case LL_MachineRealMemory64:
-		case LL_MachineVirtualMemory64:
-		case LL_MachineFreeRealMemory64:
-		case LL_MachinePagesScanned64:
-		case LL_MachinePagesFreed64:
-		case LL_MachinePagesPagedIn64:
-		case LL_MachinePagesPagedOut64:
-		case LL_MachineLargePageSize64:
-		case LL_MachineLargePageCount64:
-		case LL_MachineLargePageFree64:
-		case LL_ResourceInitialValue64:
-		case LL_ResourceAvailableValue64:
-		case LL_ResourceRequirementValue64:
-		case LL_WlmStatCpuTotalUsage:
-		case LL_WlmStatMemoryHighWater:
-		case LL_DispUsageStepUserTime64:
-		case LL_DispUsageStepSystemTime64:
-		case LL_DispUsageStepMaxrss64:
-		case LL_DispUsageStepIxrss64:
-		case LL_DispUsageStepIdrss64:
-		case LL_DispUsageStepIsrss64:
-		case LL_DispUsageStepMinflt64:
-		case LL_DispUsageStepMajflt64:
-		case LL_DispUsageStepNswap64:
-		case LL_DispUsageStepInblock64:
-		case LL_DispUsageStepOublock64:
-		case LL_DispUsageStepMsgsnd64:
-		case LL_DispUsageStepMsgrcv64:
-		case LL_DispUsageStepNsignals64:
-		case LL_DispUsageStepNvcsw64:
-		case LL_DispUsageStepNivcsw64:
-		case LL_DispUsageStarterUserTime64:
-		case LL_DispUsageStarterSystemTime64:
-		case LL_DispUsageStarterMaxrss64:
-		case LL_DispUsageStarterIxrss64:
-		case LL_DispUsageStarterIdrss64:
-		case LL_DispUsageStarterIsrss64:
-		case LL_DispUsageStarterMinflt64:
-		case LL_DispUsageStarterMajflt64:
-		case LL_DispUsageStarterNswap64:
-		case LL_DispUsageStarterInblock64:
-		case LL_DispUsageStarterOublock64:
-		case LL_DispUsageStarterMsgsnd64:
-		case LL_DispUsageStarterMsgrcv64:
-		case LL_DispUsageStarterNsignals64:
-		case LL_DispUsageStarterNvcsw64:
-		case LL_DispUsageStarterNivcsw64:
-		case LL_EventUsageStepUserTime64:
-		case LL_EventUsageStepSystemTime64:
-		case LL_EventUsageStepMaxrss64:
-		case LL_EventUsageStepIxrss64:
-		case LL_EventUsageStepIdrss64:
-		case LL_EventUsageStepIsrss64:
-		case LL_EventUsageStepMinflt64:
-		case LL_EventUsageStepMajflt64:
-		case LL_EventUsageStepNswap64:
-		case LL_EventUsageStepInblock64:
-		case LL_EventUsageStepOublock64:
-		case LL_EventUsageStepMsgsnd64:
-		case LL_EventUsageStepMsgrcv64:
-		case LL_EventUsageStepNsignals64:
-		case LL_EventUsageStepNvcsw64:
-		case LL_EventUsageStepNivcsw64:
-		case LL_EventUsageStarterUserTime64:
-		case LL_EventUsageStarterSystemTime64:
-		case LL_EventUsageStarterMaxrss64:
-		case LL_EventUsageStarterIxrss64:
-		case LL_EventUsageStarterIdrss64:
-		case LL_EventUsageStarterIsrss64:
-		case LL_EventUsageStarterMinflt64:
-		case LL_EventUsageStarterMajflt64:
-		case LL_EventUsageStarterNswap64:
-		case LL_EventUsageStarterInblock64:
-		case LL_EventUsageStarterOublock64:
-		case LL_EventUsageStarterMsgsnd64:
-		case LL_EventUsageStarterMsgrcv64:
-		case LL_EventUsageStarterNsignals64:
-		case LL_EventUsageStarterNvcsw64:
-#if LLVER > 3030000
-		case LL_StepAcctKey:
-#endif
-		    {
-			int64_t value;
-			int     rc;
-
-		    	rc=ll_get_data(object,Specification,&value);
-/*		    	printf("%d = %lld\n",Specification,value);*/
-			if (rc >= 0)
-			{
-			    XPUSHs(sv_2mortal(newSViv(value)));
-			    XSRETURN(1);
-			}
-			else
-			    XSRETURN_UNDEF;
-		    }
-		    break ;
-		case LL_JobManagementPrinterFILE:
-		case LL_JobManagementRestorePrinter:
-		case LL_JobGetFirstStep:
-		case LL_JobGetNextStep:
-		case LL_JobCredential:
-		case LL_StepGetFirstNode:
-		case LL_StepGetNextNode:
-		case LL_StepGetFirstMachine:
-		case LL_StepGetNextMachine:
-		case LL_StepGetFirstSwitchTable:
-		case LL_StepGetNextSwitchTable:
-		case LL_StepGetMasterTask:
-		case LL_StepGetFirstAdapterReq:
-		case LL_StepGetNextAdapterReq:
-		case LL_StepGetFirstMachUsage:
-		case LL_StepGetNextMachUsage:
-		case LL_MachineGetFirstResource:
-		case LL_MachineGetNextResource:
-		case LL_MachineGetFirstAdapter:
-		case LL_MachineGetNextAdapter:
-		case LL_NodeGetFirstTask:
-		case LL_NodeGetNextTask:
-		case LL_TaskGetFirstTaskInstance:
-		case LL_TaskGetNextTaskInstance:
-		case LL_TaskGetFirstResourceRequirement:
-		case LL_TaskGetNextResourceRequirement:
-		case LL_TaskInstanceGetFirstAdapter:
-		case LL_TaskInstanceGetNextAdapter:
-		case LL_TaskInstanceGetFirstAdapterUsage:
-		case LL_TaskInstanceGetNextAdapterUsage:
-		case LL_ClusterGetFirstResource:
-		case LL_ClusterGetNextResource:
-		case LL_MatrixGetFirstColumn:
-		case LL_MatrixGetNextColumn:
-		case LL_MachUsageGetFirstDispUsage:
-		case LL_MachUsageGetNextDispUsage:
-		case LL_DispUsageGetFirstEventUsage:
-		case LL_DispUsageGetNextEventUsage:
-#if LLVER > 3030000
-		case LL_JobGetFirstClusterInputFile:
-		case LL_JobGetNextClusterInputFile:
-		case LL_JobGetFirstClusterOutputFile:
-		case LL_JobGetNextClusterOutputFile:
-		case LL_MachineGetFirstMCM:
-		case LL_MachineGetNextMCM:
-		case LL_TaskInstanceMachine:
-#endif
-		    {
-			void *pointer;
-			int   rc;
-
-		    	rc=ll_get_data(object,Specification,(void *)&pointer);
-		    	/*fprintf(stderr,"%d = %p\n",Specification,pointer); */
-			/* Some functions like LL_MachineGetFirstAdapter can return a rc of 0 and a null pointer */
-			if (rc >= 0)
-			{
-			  if (pointer == NULL )
-			    XSRETURN_UNDEF;
-			  else
+		      break;
+		      case LL_FairShareEntryTypes:
+		      case LL_FairShareAllocatedShares:
+		      case LL_FairShareUsedShares:
+		      {
+			  int    rc;
+			  int	 count;
+			  int	 *array;
+			  int	 i;
+		      
+			  /* First we need to get the Array size from the 
+			   *  LL_AdapterTotalWindowCount
+			   */
+			  rc=ll_get_data(object,LL_FairShareNumberOfEntries,(void *)&count);
+			  if ( rc >= 0 )
 			  {
-			    XPUSHs(sv_2mortal(newSViv((long)pointer)));
-			    XSRETURN(1);
+			      /* printf("AdapterTotalWindowCount = %ld\n",count); */
+			    rc=ll_get_data(object,Specification,(void *)&array);
+			    if ( rc >= 0 )
+			    {
+			        for(i=0;i!=count;i++)
+				{
+				    /* printf("Adapter %d = %ld\n",i,array[i]); */
+				    XPUSHs(sv_2mortal(newSViv((long)array[i])));
+			        }
+				XSRETURN(count);
+			    }
 			  }
-			}
-			else
-			    XSRETURN_UNDEF;
 
-		    }
-		    break ;
-		case LL_JobSubmitTime:
-		case LL_StepCompletionDate:
-		case LL_StepStartDate:
-#if LLVER >= 3020009 && !defined(__linux__)
-		case LL_StepStartTime:
-#endif
-		case LL_StepDispatchTime:
-		case LL_StepCkptFailStartTime:
-		case LL_StepCkptGoodElapseTime:
-		case LL_StepCkptGoodStartTime:
-		case LL_MachineTimeStamp:
-#if LLVER > 3030000
-		case LL_ClusterEnforceSubmission:
-		case LL_ReservationStartTime:
-		case LL_ReservationCreateTime:
-		case LL_ReservationModifyTime:
-#endif
-		    {
-			time_t time;
-			int   rc;
-
-		    	rc=ll_get_data(object,Specification,(void *)&time);
-		    	/*printf("%d = %ld\n",Specification,time); */
-			if (rc >= 0)
-			{
-			    XPUSHs(sv_2mortal(newSViv((long)time)));
-			    XSRETURN(1);
-			}
-			else
-			    XSRETURN_UNDEF;
-
-		    }
-		    break ;
-		default :
-		    {
-			int integer;
-			int   rc;
-
-		    	rc=ll_get_data(object,Specification,(void *)&integer);
-/*		    	fprintf(stderr,"\n%d = %ld ( %d )\n",Specification,integer,rc);*/
-			if (rc >= 0)
-			{
-			    XPUSHs(sv_2mortal(newSViv(integer)));
-			    XSRETURN(1);
-			}
-			else
-			    XSRETURN_UNDEF;
-
-		    }
-		    break ;
-		}
+		      }
+		      break;
+#endif  
+		  }
+	      }
+	      break;
+	      }
 	}
+	    
 
 void *
 llsubmit(job_cmd_file, monitor_program,monitor_arg)
@@ -3485,24 +3281,12 @@ llsubmit(job_cmd_file, monitor_program,monitor_arg)
 	    int		i;
 	    AV		*steps;
 
-	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
-
-	    /* printf("JCF = %s\n",job_cmd_file); */
+	    RETVAL=targ; /* bogus but supresses any unused variable error messages */
 	    rc=llsubmit(job_cmd_file,monitor_program,monitor_arg,&job_info,LL_JOB_VERSION);
-	    /* printf("RC = %d\n",rc); */
 	    if ( rc != 0 )
 		XSRETURN_UNDEF;
 	    else
 	    {
-	      /*
-	       * printf("JOB NAME=%s\n",job_info.job_name);
-	       * printf("JOB OWNER=%s\n",job_info.owner);
-	       * printf("JOB GROUPNAME=%s\n",job_info.groupname);
-	       * printf("JOB UID=%d\n",job_info.uid);
-	       * printf("JOB GID=%d\n",job_info.gid);
-	       * printf("JOB SUB HOST=%s\n",job_info.submit_host);
-	       * printf("JOB STEPS=%d\n",job_info.steps);
-	       */
 		XPUSHs(sv_2mortal(newSVpv(job_info.job_name, 0)));
 		XPUSHs(sv_2mortal(newSVpv(job_info.owner, 0)));
 		XPUSHs(sv_2mortal(newSVpv(job_info.groupname, 0)));
@@ -3521,7 +3305,7 @@ llsubmit(job_cmd_file, monitor_program,monitor_arg)
 		XPUSHs(sv_2mortal(newRV((SV *)steps)));
 		/* All Data now in Perl structures free the LoadLeveler construct */
 		llfree_job_info(&job_info,LL_JOB_VERSION);
-	    }
+	    }	    
 	}
 
 void *
@@ -3534,7 +3318,7 @@ ll_get_jobs()
 	    AV *jobs;
 	    int i;
 
-	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
+	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
 	    rc=ll_get_jobs(&info);
 	    if (rc != 0 )
 		XSRETURN_IV(rc);
@@ -3565,7 +3349,7 @@ ll_get_nodes()
 	    AV *nodes;
 	    int i;
 
-	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
+	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
 	    rc=ll_get_nodes(&info);
 	    if (rc != 0 )
 		XSRETURN_IV(rc);
@@ -3603,7 +3387,7 @@ ll_control(control_op,host_list,user_list,job_list, class_list,priority)
 
 		RETVAL
 
-void *
+int
 ll_modify(modify_op,value_ref,job_id)
 	int   modify_op
 	SV   *value_ref
@@ -3616,7 +3400,7 @@ ll_modify(modify_op,value_ref,job_id)
 	    int			rc;
 	    char *job_list[2];
 
-	    RETVAL=0;targ=0; /* Avoid unused variable warnings on linux */
+	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
             job_list[0] = job_id;
 	    job_list[1] = NULL;
 
@@ -3624,7 +3408,9 @@ ll_modify(modify_op,value_ref,job_id)
 
             switch (modify_op)
             {
+#if LLVER < 3040000
                 case EXECUTION_FACTOR:
+#endif
                 case CONSUMABLE_CPUS:
 #if LLVER >= 3020000
                 case WCLIMIT_ADD_MIN:
@@ -3662,16 +3448,11 @@ ll_modify(modify_op,value_ref,job_id)
 
 	    rc=ll_modify(LL_API_VERSION,&errObj,cmdp,job_list);
 
-	    if (rc == MODIFY_SUCCESS )
+	    if (rc != MODIFY_SUCCESS )
 	    {
-		XSRETURN_IV(rc);
+	        sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
-	    else
-	    {
-		XPUSHs(sv_2mortal(newSViv((long)rc)));
-		XPUSHs(sv_2mortal(newSViv((long)errObj)));
-	    } 
-	
+	    XSRETURN_IV(rc);
 	}
 
 int
@@ -3718,47 +3499,65 @@ ll_terminate_job(cluster,proc,from_host,msg)
 
 
 char *
-ll_error(errObj,print_to)
-	 LL_element *errObj
-	 int	     print_to
+ll_error(a,...)
+	CASE: items == 1
 
-	CODE:
-	{
-		RETVAL=ll_error(&errObj,print_to);
-	}
-	OUTPUT:
+          int  a
+	  CODE:
+          {
+	    LL_element *errObj=(LL_element *)SvIV(get_sv("IBM::LoadLeveler::errObj",FALSE));
+	    RETVAL=ll_error(&errObj,a);
+	  }
+	  OUTPUT:
 		RETVAL
+        CASE:
+           LL_element *a
 
-#if !defined(__linux__)
+	  CODE:
+          {
+	    int b;
 
-void *
+	    b=SvIV(ST(1));
+	    RETVAL=ll_error(&a,b);
+	  }
+	  OUTPUT:
+		RETVAL
+ 
+#if  ! defined(__linux__) || LLVER >=3030000
+int
 ll_preempt(job_step,type)
 	char *job_step
         int    type
 
 
-	PPCODE:
+	CODE:
 	{
 	    LL_element *errObj = NULL;
-	    int		rc;
 
-	    rc=ll_preempt(LL_API_VERSION,&errObj,job_step,type);
-
-	    if (rc == API_OK )
+	    RETVAL=ll_preempt(LL_API_VERSION,&errObj,job_step,type);
+	    if (RETVAL != API_OK )
 	    {
-		XSRETURN_IV(rc);
+		sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
-	    else
-	    {
-		XPUSHs(sv_2mortal(newSViv((long)rc)));
-		XPUSHs(sv_2mortal(newSViv((long)errObj)));
-	    } 
-	
 	}
+        OUTPUT:
+	       RETVAL
 
 #endif
 
 #if LLVER >= 3030000
+
+int
+ll_run_scheduler(Obj)
+   	 LL_element *Obj 
+
+	CODE:
+	{
+	    RETVAL=ll_run_scheduler(LL_API_VERSION,&Obj);
+	}
+	OUTPUT:
+		RETVAL
+
 void *
 ll_make_reservation(start_time,duration,data_type,data,options,users,groups,group)
 	char  *start_time
@@ -3779,12 +3578,18 @@ ll_make_reservation(start_time,duration,data_type,data,options,users,groups,grou
 	    int rc;
 
 	    /* First Initialize the structure */
+	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
 	    rc = ll_init_reservation_param(LL_API_VERSION,&errObj,&p_param);
 	    if ( rc != 0 )
 	    {
 		/* If the init_routine fails send the error code and object back */
 		XPUSHs(sv_2mortal(newSViv((long)rc)));
-		XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+		XPUSHs(sv_2mortal(&PL_sv_undef));	
+		if (rc != API_OK )
+		{
+		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
+		}
+
 	    }
 	    else		       
 	    {
@@ -3842,7 +3647,9 @@ ll_make_reservation(start_time,duration,data_type,data,options,users,groups,grou
 		else
 		{
 		    XPUSHs(sv_2mortal(newSViv((long)rc)));
-		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+		    XPUSHs(sv_2mortal(&PL_sv_undef));
+		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
+	
 		}
 	   }
 	}
@@ -3861,51 +3668,45 @@ ll_bind(jobsteplist,ID,unbind)
 		
 	    int rc;
 
+	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 	    param.jobsteplist=jobsteplist;
 	    param.ID=ID;
 	    param.unbind=unbind;
 	    rc=ll_bind(LL_API_VERSION,&errObj,&p_param);
-	    if ( rc == RESERVATION_OK)
+	    if ( rc != RESERVATION_OK)
 	    {
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
-		    XPUSHs(sv_2mortal(newSViv((long)NULL)));	
-	    }	
-	    else
-	    {
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
-		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
+	    XSRETURN_IV(rc);
 	}
 
-
 int
-ll_remove_reservation(IDs,user_list,host_list,group_list)
+ll_remove_reservation(IDs,user_list,host_list,group_list,base_partition_list)
 	char **IDs
 	char **user_list
 	char **host_list
 	char **group_list
+	char **base_partition_list
 
-	PPCODE:
+	CODE:
 	{
 	    LL_element    *errObj = NULL;
-		
-	    int rc;
 
-	    rc=ll_remove_reservation(LL_API_VERSION,&errObj,IDs,user_list,host_list,group_list);
-	    if ( rc == RESERVATION_OK)
+	    RETVAL=0;
+#if LLVER < 3040000	
+	    RETVAL=ll_remove_reservation(LL_API_VERSION,&errObj,IDs,user_list,host_list,group_list);
+#else
+	    RETVAL=ll_remove_reservation(LL_API_VERSION,&errObj,IDs,user_list,host_list,group_list,base_partition_list);
+#endif
+	    if ( RETVAL != RESERVATION_OK)
 	    {
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
-		    XPUSHs(sv_2mortal(newSViv((long)NULL)));	
-	    }	
-	    else
-	    {
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
-		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
 	}
+        OUTPUT:
+	    RETVAL
 
-
-void *
+int
 ll_change_reservation(ID,param)
 	char  *ID
 	HV    *param
@@ -3921,8 +3722,9 @@ ll_change_reservation(ID,param)
 	    int rc;
 	    LL_element    *errObj = NULL;
 
+	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 	    count=hv_iterinit(param);
-	  /*  fprintf(stderr,"HV_ITERINIT icount = %i\n",count);*/
+	    /*  fprintf(stderr,"HV_ITERINIT icount = %i\n",count);*/
 	    /* Make space to store all of the arguments */
 	    data=calloc(count,sizeof(LL_reservation_change_param));
 	    p_data=calloc(count+1,sizeof(LL_reservation_change_param *));
@@ -3957,57 +3759,279 @@ ll_change_reservation(ID,param)
 		value=hv_fetch(param,key,len,0);
 		switch(data[i].type)
 		{
-		case RESERVATION_START_TIME:
-		case RESERVATION_BY_JOBSTEP:
-		case RESERVATION_BY_JCF:
-		case RESERVATION_GROUP:
-		case RESERVATION_OWNER:
-		{
-		    data[i].data=SvPV_nolen(*value);
-		  /*  fprintf(stderr,"%d (char *)= %s,%s\n",i,key,data[i].data); */
-		}
-		break;
-		case RESERVATION_BY_HOSTLIST:
-		case RESERVATION_ADD_HOSTS:
-		case RESERVATION_DEL_HOSTS:
-		case RESERVATION_ADD_USERS:
-		case RESERVATION_DEL_USERS:
-		case RESERVATION_GROUPLIST:
-		case RESERVATION_ADD_GROUPS:
-		case RESERVATION_DEL_GROUPS:
-		{		    
-		    data[i].data=XS_unpack_charPtrPtr(*value);
-
-		}
-		break;
-		default :
-		{
-		    int val;
+		    case RESERVATION_START_TIME:
+		    case RESERVATION_BY_JOBSTEP:
+		    case RESERVATION_BY_JCF:
+		    case RESERVATION_GROUP:
+		    case RESERVATION_OWNER:
+		    {
+			data[i].data=SvPV_nolen(*value);
+			/*  fprintf(stderr,"%d (char *)= %s,%s\n",i,key,data[i].data); */
+		    }
+		    break;
+ 		    case RESERVATION_BY_HOSTLIST:
+		    case RESERVATION_ADD_HOSTS:
+		    case RESERVATION_DEL_HOSTS:
+		    case RESERVATION_ADD_USERS:
+		    case RESERVATION_DEL_USERS:
+		    case RESERVATION_GROUPLIST:
+		    case RESERVATION_ADD_GROUPS:
+		    case RESERVATION_DEL_GROUPS:
+		    {		    
+			data[i].data=XS_unpack_charPtrPtr(*value);
+		    }
+		    break;
+		    default :
+		    {
+			int val;
 		    
-		    val=SvIV(*value);
+			val=SvIV(*value);
 #if LLVER == 3030000
-		    data[i].data=(void *)val;
+			data[i].data=(void *)val;
 #else
-		    data[i].data=&val;
+			data[i].data=&val;
 #endif
-		  /*  fprintf(stderr,"%d (int*)= %s,%d\n",i,key,val); */
-		}
+			/*  fprintf(stderr,"%d (int*)= %s,%d\n",i,key,val); */
+		    }
 		}
 		
 	    }
 	    p_data[count]=NULL;
 	    rc=ll_change_reservation(LL_API_VERSION,&errObj,&ID,p_data);
-	    if ( rc == RESERVATION_OK)
+	    if ( rc != RESERVATION_OK)
 	    {
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
-		    XPUSHs(sv_2mortal(newSViv((long)NULL)));	
-	    }	
-	    else
-	    {
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
-		    XPUSHs(sv_2mortal(newSViv((long)errObj)));	
+		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
+	    XSRETURN_IV(rc);
 
 	}
 
+void *
+ll_preempt_jobs(param)
+        SV   *param
+
+	PPCODE:
+	{
+	    int                rc;
+	    LL_element        *errObj = NULL;
+	    LL_preempt_param  *data;
+	    LL_preempt_param **p_data = NULL;
+	    int                avlen,i,p,count;
+	    I32                len;
+	    HV		      *hash;
+	    SV		      **value;
+	    char               *key;
+	    SV		       *ptr;
+	    AV		       *array;
+	    
+	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
+	    /* 
+	     * Input is an array of hashes. unpack them and use to
+	     * build the reqiured array of structures.
+	     */
+
+	    /* Is it an array */
+	    if ((!SvROK(param)) || (SvTYPE(SvRV(param)) != SVt_PVAV ))
+	    {
+		XPUSHs(sv_2mortal(newSViv((long)-5))); /* "Return a system error occured" */
+		XPUSHs(sv_2mortal(newSViv((long)NULL)));	
+	    }
+	    array=(AV *)SvRV(param);
+
+	    /* is it empty? */	    
+	    avlen = av_len(array);
+	    /* printf("AV Length = %d\n",avlen); */
+	    if( avlen < 0 )
+	    {
+		XPUSHs(sv_2mortal(newSViv((long)-5))); /* "Return a system error occured" */
+		XPUSHs(sv_2mortal(newSViv((long)NULL)));	
+	    }
+	    else
+	    {
+		/* Not empty, so alloc some space */
+		data=calloc(avlen+1,sizeof(LL_preempt_param));
+		p_data=calloc(avlen+1,sizeof(LL_preempt_param *));
+		for( i = 0; i <= avlen; i++ )
+		{
+		    /* printf("AV Element = %d\n",i); */
+		    /* walk the array, getting each hash */
+		    p_data[i] = &data[i];
+		    
+		    hash =  (HV *)(SvRV(*av_fetch( array, i, 0 )));
+		    count=hv_iterinit(hash);
+		    /* printf("HASH Size = %d\n",count); */
+		    p_data[i]->user_list=NULL;
+		    p_data[i]->host_list=NULL;
+		    p_data[i]->job_list=NULL;	
+		    for(p=0;p!=count;p++)
+		    {
+			/* Walk the hash, stufing values in to slots */
+		        ptr=hv_iternextsv(hash,&key,&len);
+			value=hv_fetch(hash,key,len,0);
+			/* fprintf(stderr, "HASH KEY %d = %s\n",p,key); */
+			if (strncmp(key,"type",len) == 0)      { p_data[i]->type=SvIV(*value); };
+			if (strncmp(key,"method",len) == 0)    { p_data[i]->method=SvIV(*value); };
+			if (strncmp(key,"user_list",len) == 0) { p_data[i]->user_list=XS_unpack_charPtrPtr(*value);};
+			if (strncmp(key,"host_list",len) == 0) { p_data[i]->host_list=XS_unpack_charPtrPtr(*value); };
+			if (strncmp(key,"job_list",len) == 0)  { p_data[i]->job_list=XS_unpack_charPtrPtr(*value); };
+		    }
+		}
+	    }
+	    /* Now make the call */
+	    rc=ll_preempt_jobs(LL_API_VERSION,&errObj,p_data);
+            if (rc != API_OK) 
+	    {
+	        sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
+	    }
+	    XSRETURN_IV(rc);
+	}
+
+
 #endif
+
+int
+ll_start_job_ext(info)
+        HV   *info
+
+	CODE:
+	{
+	    LL_start_job_info_ext	job;
+	    int count,i;
+	    I32 len;
+	    SV *ptr;
+	    SV **value;
+	    char *key;
+	    
+	    
+	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
+	    /* Iterate over all hash elements */
+	    count=hv_iterinit(info);
+	    for(i=0;i!=count;i++)
+	    {
+ 		ptr=hv_iternextsv(info,&key,&len);
+		value=hv_fetch(info,key,len,0);
+		if (strncmp(key,"StepId.cluster",len) == 0) { job.StepId.cluster =SvIV(*value); };
+		if (strncmp(key,"StepId.proc",len) == 0) { job.StepId.proc =SvIV(*value); };
+		if (strncmp(key,"StepId.from_host",len) == 0) { job.StepId.from_host=SvPV_nolen(*value); };
+		if (strncmp(key,"adapterUsageCount",len) == 0) { job.adapterUsageCount = SvIV(*value); };
+		if (strncmp(key,"adapterUsage",len) == 0) 
+		{
+		    int i,avlen,p;
+		    AV *array;
+		    LL_ADAPTER_USAGE *data;
+		    LL_ADAPTER_USAGE **p_data = NULL;
+		    HV		      *hash;
+
+
+		    /* LL_ADAPTER_USAGE is an array of structures */
+		    array=(AV *)SvRV(*value);
+		    avlen = av_len(array);
+		    data=calloc(avlen+1,sizeof(LL_ADAPTER_USAGE));
+		    for( i = 0; i <= avlen; i++ )
+		    {
+			/* printf("AV Element = %d\n",i); */
+			/* walk the array, getting each hash */
+			
+			hash =  (HV *)(SvRV(*av_fetch( array, i, 0 )));
+			count=hv_iterinit(hash);
+			/* printf("HASH Size = %d\n",count); */
+			for(p=0;p!=count;p++)
+			{
+			    /* Walk the hash, stufing values in to slots */
+			    ptr=hv_iternextsv(hash,&key,&len);
+			    value=hv_fetch(hash,key,len,0);
+			    /* fprintf(stderr, "HASH KEY %d = %s\n",p,key); */
+			    if (strncmp(key,"dev_name",len) == 0)  { data[i].dev_name=SvPV_nolen(*value); };
+			    if (strncmp(key,"protocol",len) == 0)  { data[i].protocol=SvPV_nolen(*value); };
+			    if (strncmp(key,"subsystem",len) == 0) { data[i].subsystem=SvPV_nolen(*value); };
+			    if (strncmp(key,"wid",len) == 0)       { data[i].wid=SvIV(*value); };
+			    if (strncmp(key,"mem",len) == 0)       { data[i].mem=SvIV(*value); };
+			    if (strncmp(key,"api_rcxtblocks",len) == 0)  { p_data[i]->api_rcxtblocks=SvIV(*value);};
+			}
+		    }
+		    job.adapterUsage = data;
+		}
+	    }
+
+	    RETVAL=ll_start_job_ext(&job);	    
+	}
+	OUTPUT:
+		RETVAL
+
+
+int
+ll_cluster(action,cluster_list)
+	int action
+	char **cluster_list
+
+	PPCODE:
+	{
+	    int rc;
+	    LL_element        *errObj = NULL;
+	    LL_cluster_param   param;
+
+
+	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
+	    param.action=action;
+            param.cluster_list=cluster_list;
+
+	    rc=ll_cluster(LL_API_VERSION,&errObj,&param);
+
+            if (rc != CLUSTER_SUCCESS )
+            {
+	      sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
+	    }
+	    XSRETURN_IV(rc);
+	}
+
+
+int
+ll_cluster_auth()
+
+	PPCODE:
+	{
+		int rc;
+	    	LL_element        *errObj = NULL;
+	 	LL_cluster_auth_param auth_param;
+ 		LL_cluster_auth_param *param_list[2];
+
+		RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
+		/* Set type to generate keys */
+		auth_param.type = CLUSTER_AUTH_GENKEY;
+		
+		param_list[0] = &auth_param;
+		param_list[1] = NULL;
+
+		rc = ll_cluster_auth(LL_API_VERSION, &errObj, param_list);
+
+		if (rc != API_OK) 
+		{
+		  sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
+		}
+		XSRETURN_IV(rc);
+	}
+
+int
+ll_fair_share(operation,dir,file)
+     int    operation
+     char  *dir
+     char  *file
+
+     PPCODE:
+     {
+         int                  rc;
+	 LL_element          *errObj=NULL;
+         LL_fair_share_param  param;
+
+	 RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
+	 param.operation=operation;
+         param.savedir=dir;
+	 param.savedfile=file;
+
+	 rc=ll_fair_share(LL_API_VERSION,&errObj,&param);
+	 if (rc != API_OK )
+	 {
+	   sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
+	 }
+	 XSRETURN_IV(rc);
+     }
