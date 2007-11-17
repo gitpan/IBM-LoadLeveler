@@ -2856,6 +2856,27 @@ not_there:
 
 #endif
 
+
+/* This call back function is called by the ll_move_spool API after each
+ * job is processed. This allows the caller to receive status for each job 
+ * This routine was copied from llmovespool in the sample directory.
+ */
+
+int _ll_print_job_status(char *jobid,int rc, LL_element **messageObj) 
+{
+
+        char *msg = NULL;
+
+        if (rc == API_OK) {
+                msg = ll_error(messageObj,1);
+        } else {
+                msg = ll_error(messageObj,2);
+        }
+        if (msg != NULL) free(msg);
+	return(rc);
+}
+
+
 MODULE = IBM::LoadLeveler		PACKAGE = IBM::LoadLeveler
 
 #if 0
@@ -2874,7 +2895,7 @@ constant(sv,arg)
 
 #endif
 
-char *
+const char *
 ll_version()
 
 LL_element *
@@ -2898,6 +2919,9 @@ void
 ll_deallocate(object)
 	LL_element *object
 
+int 
+ll_config_changed()
+     
 int
 ll_set_request(object,QueryFlags,ObjectFilter,DataFilter)
 	LL_element *object
@@ -2930,7 +2954,7 @@ ll_get_data(object,Specification)
 
 	PPCODE:
         {
-	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
+	  RETVAL=(void *)targ; /* bogus but spresses any unused variable error messages */
 	    /*fprintf(stderr,"\nSPECIFICATION = %d\n",Specification);*/
 	    switch (defs[Specification])
 	    {
@@ -3281,7 +3305,7 @@ llsubmit(job_cmd_file, monitor_program,monitor_arg)
 	    int		i;
 	    AV		*steps;
 
-	    RETVAL=targ; /* bogus but supresses any unused variable error messages */
+	    RETVAL=(void *)targ; /* bogus but supresses any unused variable error messages */
 	    rc=llsubmit(job_cmd_file,monitor_program,monitor_arg,&job_info,LL_JOB_VERSION);
 	    if ( rc != 0 )
 		XSRETURN_UNDEF;
@@ -3318,7 +3342,7 @@ ll_get_jobs()
 	    AV *jobs;
 	    int i;
 
-	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
+	    RETVAL=(void *)targ; /* bogus but spresses any unused variable error messages */
 	    rc=ll_get_jobs(&info);
 	    if (rc != 0 )
 		XSRETURN_IV(rc);
@@ -3349,7 +3373,7 @@ ll_get_nodes()
 	    AV *nodes;
 	    int i;
 
-	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
+	    RETVAL=(void *)targ; /* bogus but spresses any unused variable error messages */
 	    rc=ll_get_nodes(&info);
 	    if (rc != 0 )
 		XSRETURN_IV(rc);
@@ -3393,14 +3417,12 @@ ll_modify(modify_op,value_ref,job_id)
 	SV   *value_ref
 	char *job_id
 
-	PPCODE:
+	CODE:
 	{
 	    LL_element		*errObj = NULL;
 	    LL_modify_param	mycmd, *cmdp[2];
-	    int			rc;
 	    char *job_list[2];
 
-	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
             job_list[0] = job_id;
 	    job_list[1] = NULL;
 
@@ -3446,14 +3468,15 @@ ll_modify(modify_op,value_ref,job_id)
             cmdp[0]=&mycmd;
 	    cmdp[1]=NULL;
 
-	    rc=ll_modify(LL_API_VERSION,&errObj,cmdp,job_list);
+	    RETVAL=ll_modify(LL_API_VERSION,&errObj,cmdp,job_list);
 
-	    if (rc != MODIFY_SUCCESS )
+	    if (RETVAL != MODIFY_SUCCESS )
 	    {
 	        sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
-	    XSRETURN_IV(rc);
 	}
+        OUTPUT:
+	      RETVAL
 
 int
 ll_start_job(cluster,proc,from_host,node_list)
@@ -3578,12 +3601,11 @@ ll_make_reservation(start_time,duration,data_type,data,options,users,groups,grou
 	    int rc;
 
 	    /* First Initialize the structure */
-	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
+	    RETVAL=(void *)targ; /* bogus but spresses any unused variable error messages */
 	    rc = ll_init_reservation_param(LL_API_VERSION,&errObj,&p_param);
 	    if ( rc != 0 )
 	    {
 		/* If the init_routine fails send the error code and object back */
-		XPUSHs(sv_2mortal(newSViv((long)rc)));
 		XPUSHs(sv_2mortal(&PL_sv_undef));	
 		if (rc != API_OK )
 		{
@@ -3605,6 +3627,9 @@ ll_make_reservation(start_time,duration,data_type,data,options,users,groups,grou
 		switch (data_type)
 		{
 		    case RESERVATION_BY_NODE:
+#if LLVER >= 3040101
+		    case RESERVATION_BY_BG_CNODE:
+#endif
 		    {
 			int value;
 
@@ -3625,6 +3650,10 @@ ll_make_reservation(start_time,duration,data_type,data,options,users,groups,grou
 		    break;
 		    case RESERVATION_BY_JOBSTEP:
 		    case RESERVATION_BY_JCF:
+#if LLVER >= 3040101
+		    case RESERVATION_BY_HOSTFILE:
+#endif
+
 		    {
 			char *value;
 			value=SvPV_nolen(data);
@@ -3640,13 +3669,11 @@ ll_make_reservation(start_time,duration,data_type,data,options,users,groups,grou
 		rc = ll_make_reservation(LL_API_VERSION,&errObj,&p_param);
 		if ( rc == RESERVATION_OK )
 		{
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
 		    XPUSHs(sv_2mortal(newSVpv(*param.ID, 0)));
 		    Safefree(param.ID);
 		}
 		else
 		{
-		    XPUSHs(sv_2mortal(newSViv((long)rc)));
 		    XPUSHs(sv_2mortal(&PL_sv_undef));
 		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	
@@ -3660,25 +3687,23 @@ ll_bind(jobsteplist,ID,unbind)
 	char  *ID
 	int    unbind
 
-	PPCODE:
+	CODE:
 	{
 	    LL_element    *errObj = NULL;
 	    LL_bind_param  param;
 	    LL_bind_param *p_param = &param;
 		
-	    int rc;
-
-	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 	    param.jobsteplist=jobsteplist;
 	    param.ID=ID;
 	    param.unbind=unbind;
-	    rc=ll_bind(LL_API_VERSION,&errObj,&p_param);
-	    if ( rc != RESERVATION_OK)
+	    RETVAL=ll_bind(LL_API_VERSION,&errObj,&p_param);
+	    if ( RETVAL != RESERVATION_OK)
 	    {
 		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
-	    XSRETURN_IV(rc);
 	}
+        OUTPUT:
+	    RETVAL
 
 int
 ll_remove_reservation(IDs,user_list,host_list,group_list,base_partition_list)
@@ -3711,7 +3736,7 @@ ll_change_reservation(ID,param)
 	char  *ID
 	HV    *param
 
-	PPCODE:
+	CODE:
 	{
 	    I32	count,len,i;
 	    char *key;
@@ -3719,10 +3744,8 @@ ll_change_reservation(ID,param)
 	    SV  **value;
 	    LL_reservation_change_param *data;
 	    LL_reservation_change_param **p_data;
-	    int rc;
 	    LL_element    *errObj = NULL;
 
-	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 	    count=hv_iterinit(param);
 	    /*  fprintf(stderr,"HV_ITERINIT icount = %i\n",count);*/
 	    /* Make space to store all of the arguments */
@@ -3740,21 +3763,27 @@ ll_change_reservation(ID,param)
 		if (strncmp(key,"RESERVATION_ADD_DURATION",len) == 0)   { data[i].type=RESERVATION_ADD_DURATION; };
 		if (strncmp(key,"RESERVATION_BY_NODE",len) == 0)        { data[i].type=RESERVATION_BY_NODE; };
 		if (strncmp(key,"RESERVATION_ADD_NUM_NODE",len) == 0)   { data[i].type=RESERVATION_ADD_NUM_NODE; };
-		if (strncmp(key,"RESERVATION_BY_HOSTLIST",len) == 0) { data[i].type=RESERVATION_BY_HOSTLIST; };
-		if (strncmp(key,"RESERVATION_ADD_HOSTS",len) == 0)   { data[i].type=RESERVATION_ADD_HOSTS; };
-		if (strncmp(key,"RESERVATION_DEL_HOSTS",len) == 0)   { data[i].type=RESERVATION_DEL_HOSTS; };
-		if (strncmp(key,"RESERVATION_BY_JOBSTEP",len) == 0)  { data[i].type=RESERVATION_BY_JOBSTEP; };
-		if (strncmp(key,"RESERVATION_BY_JCF",len) == 0)      { data[i].type=RESERVATION_BY_JCF; };
-		if (strncmp(key,"RESERVATION_USERLIST",len) == 0)    { data[i].type=RESERVATION_USERLIST; };
-		if (strncmp(key,"RESERVATION_ADD_USERS",len) == 0)   { data[i].type=RESERVATION_ADD_USERS; };
-		if (strncmp(key,"RESERVATION_DEL_USERS",len) == 0)   { data[i].type=RESERVATION_DEL_USERS; };
-		if (strncmp(key,"RESERVATION_GROUPLIST",len) == 0)   { data[i].type=RESERVATION_GROUPLIST; };
-		if (strncmp(key,"RESERVATION_ADD_GROUPS",len) == 0)  { data[i].type=RESERVATION_ADD_GROUPS; };
-		if (strncmp(key,"RESERVATION_DEL_GROUPS",len) == 0)  { data[i].type=RESERVATION_DEL_GROUPS; };
-		if (strncmp(key,"RESERVATION_MODE_SHARED",len) == 0) { data[i].type=RESERVATION_MODE_SHARED; };
+		if (strncmp(key,"RESERVATION_BY_HOSTLIST",len) == 0)    { data[i].type=RESERVATION_BY_HOSTLIST; };
+#if LLVER >= 3040000
+		if (strncmp(key,"RESERVATION_BY_BG_CNODE",len) == 0)    { data[i].type=RESERVATION_BY_BG_CNODE; };
+#endif
+#if LLVER >= 3040101
+		if (strncmp(key,"RESERVATION_BY_HOSTFILE",len) == 0)    { data[i].type=RESERVATION_BY_HOSTFILE; };
+#endif
+		if (strncmp(key,"RESERVATION_ADD_HOSTS",len) == 0)      { data[i].type=RESERVATION_ADD_HOSTS; };
+		if (strncmp(key,"RESERVATION_DEL_HOSTS",len) == 0)      { data[i].type=RESERVATION_DEL_HOSTS; };
+		if (strncmp(key,"RESERVATION_BY_JOBSTEP",len) == 0)     { data[i].type=RESERVATION_BY_JOBSTEP; };
+		if (strncmp(key,"RESERVATION_BY_JCF",len) == 0)         { data[i].type=RESERVATION_BY_JCF; };
+		if (strncmp(key,"RESERVATION_USERLIST",len) == 0)       { data[i].type=RESERVATION_USERLIST; };
+		if (strncmp(key,"RESERVATION_ADD_USERS",len) == 0)      { data[i].type=RESERVATION_ADD_USERS; };
+		if (strncmp(key,"RESERVATION_DEL_USERS",len) == 0)      { data[i].type=RESERVATION_DEL_USERS; };
+		if (strncmp(key,"RESERVATION_GROUPLIST",len) == 0)      { data[i].type=RESERVATION_GROUPLIST; };
+		if (strncmp(key,"RESERVATION_ADD_GROUPS",len) == 0)     { data[i].type=RESERVATION_ADD_GROUPS; };
+		if (strncmp(key,"RESERVATION_DEL_GROUPS",len) == 0)     { data[i].type=RESERVATION_DEL_GROUPS; };
+		if (strncmp(key,"RESERVATION_MODE_SHARED",len) == 0)    { data[i].type=RESERVATION_MODE_SHARED; };
+		if (strncmp(key,"RESERVATION_OWNER",len) == 0)          { data[i].type=RESERVATION_OWNER; };
+		if (strncmp(key,"RESERVATION_GROUP",len) == 0)          { data[i].type=RESERVATION_GROUP; };
 		if (strncmp(key,"RESERVATION_MODE_REMOVE_ON_IDLE",len) == 0) { data[i].type=RESERVATION_MODE_REMOVE_ON_IDLE; };
-		if (strncmp(key,"RESERVATION_OWNER",len) == 0) { data[i].type=RESERVATION_OWNER; };
-		if (strncmp(key,"RESERVATION_GROUP",len) == 0) { data[i].type=RESERVATION_GROUP; };
 /*		fprintf(stderr,"%d = HV_ITERNEXTSV %i,%s,%i\n",i,ptr,key,len); */
 		value=hv_fetch(param,key,len,0);
 		switch(data[i].type)
@@ -3764,6 +3793,9 @@ ll_change_reservation(ID,param)
 		    case RESERVATION_BY_JCF:
 		    case RESERVATION_GROUP:
 		    case RESERVATION_OWNER:
+#if LLVER >= 3040101
+		    case RESERVATION_BY_HOSTFILE:
+#endif
 		    {
 			data[i].data=SvPV_nolen(*value);
 			/*  fprintf(stderr,"%d (char *)= %s,%s\n",i,key,data[i].data); */
@@ -3777,6 +3809,10 @@ ll_change_reservation(ID,param)
 		    case RESERVATION_GROUPLIST:
 		    case RESERVATION_ADD_GROUPS:
 		    case RESERVATION_DEL_GROUPS:
+#if LLVER >= 3040000
+		    case RESERVATION_BY_BG_CNODE:
+#endif
+
 		    {		    
 			data[i].data=XS_unpack_charPtrPtr(*value);
 		    }
@@ -3797,22 +3833,21 @@ ll_change_reservation(ID,param)
 		
 	    }
 	    p_data[count]=NULL;
-	    rc=ll_change_reservation(LL_API_VERSION,&errObj,&ID,p_data);
-	    if ( rc != RESERVATION_OK)
+	    RETVAL=ll_change_reservation(LL_API_VERSION,&errObj,&ID,p_data);
+	    if ( RETVAL != RESERVATION_OK)
 	    {
 		    sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	    }
-	    XSRETURN_IV(rc);
-
 	}
+        OUTPUT:
+            RETVAL
 
-void *
+int
 ll_preempt_jobs(param)
         SV   *param
 
-	PPCODE:
+	CODE:
 	{
-	    int                rc;
 	    LL_element        *errObj = NULL;
 	    LL_preempt_param  *data;
 	    LL_preempt_param **p_data = NULL;
@@ -3823,8 +3858,7 @@ ll_preempt_jobs(param)
 	    char               *key;
 	    SV		       *ptr;
 	    AV		       *array;
-	    
-	    RETVAL=targ; /* bogus but spresses any unused variable error messages */
+	           
 	    /* 
 	     * Input is an array of hashes. unpack them and use to
 	     * build the reqiured array of structures.
@@ -3833,59 +3867,60 @@ ll_preempt_jobs(param)
 	    /* Is it an array */
 	    if ((!SvROK(param)) || (SvTYPE(SvRV(param)) != SVt_PVAV ))
 	    {
-		XPUSHs(sv_2mortal(newSViv((long)-5))); /* "Return a system error occured" */
-		XPUSHs(sv_2mortal(newSViv((long)NULL)));	
-	    }
-	    array=(AV *)SvRV(param);
-
-	    /* is it empty? */	    
-	    avlen = av_len(array);
-	    /* printf("AV Length = %d\n",avlen); */
-	    if( avlen < 0 )
-	    {
-		XPUSHs(sv_2mortal(newSViv((long)-5))); /* "Return a system error occured" */
-		XPUSHs(sv_2mortal(newSViv((long)NULL)));	
+	        RETVAL=-5;
 	    }
 	    else
 	    {
-		/* Not empty, so alloc some space */
-		data=calloc(avlen+1,sizeof(LL_preempt_param));
-		p_data=calloc(avlen+1,sizeof(LL_preempt_param *));
-		for( i = 0; i <= avlen; i++ )
+	        array=(AV *)SvRV(param);
+
+		/* is it empty? */	    
+		avlen = av_len(array);
+		/* printf("AV Length = %d\n",avlen); */
+		if( avlen < 0 )
 		{
-		    /* printf("AV Element = %d\n",i); */
-		    /* walk the array, getting each hash */
-		    p_data[i] = &data[i];
+		    RETVAL=-5;
+		}
+		else
+		{
+		    /* Not empty, so alloc some space */
+		  data=calloc(avlen+1,sizeof(LL_preempt_param));
+		  p_data=calloc(avlen+1,sizeof(LL_preempt_param *));
+		  for( i = 0; i <= avlen; i++ )
+		  {
+		      /* printf("AV Element = %d\n",i); */
+		      /* walk the array, getting each hash */
+		      p_data[i] = &data[i];
 		    
-		    hash =  (HV *)(SvRV(*av_fetch( array, i, 0 )));
-		    count=hv_iterinit(hash);
-		    /* printf("HASH Size = %d\n",count); */
-		    p_data[i]->user_list=NULL;
-		    p_data[i]->host_list=NULL;
-		    p_data[i]->job_list=NULL;	
-		    for(p=0;p!=count;p++)
-		    {
-			/* Walk the hash, stufing values in to slots */
-		        ptr=hv_iternextsv(hash,&key,&len);
-			value=hv_fetch(hash,key,len,0);
-			/* fprintf(stderr, "HASH KEY %d = %s\n",p,key); */
-			if (strncmp(key,"type",len) == 0)      { p_data[i]->type=SvIV(*value); };
-			if (strncmp(key,"method",len) == 0)    { p_data[i]->method=SvIV(*value); };
-			if (strncmp(key,"user_list",len) == 0) { p_data[i]->user_list=XS_unpack_charPtrPtr(*value);};
-			if (strncmp(key,"host_list",len) == 0) { p_data[i]->host_list=XS_unpack_charPtrPtr(*value); };
-			if (strncmp(key,"job_list",len) == 0)  { p_data[i]->job_list=XS_unpack_charPtrPtr(*value); };
-		    }
+		      hash =  (HV *)(SvRV(*av_fetch( array, i, 0 )));
+		      count=hv_iterinit(hash);
+		      /* printf("HASH Size = %d\n",count); */
+		      p_data[i]->user_list=NULL;
+		      p_data[i]->host_list=NULL;
+		      p_data[i]->job_list=NULL;	
+		      for(p=0;p!=count;p++)
+		      {
+			  /* Walk the hash, stufing values in to slots */
+		          ptr=hv_iternextsv(hash,&key,&len);
+			  value=hv_fetch(hash,key,len,0);
+			  /* fprintf(stderr, "HASH KEY %d = %s\n",p,key); */
+			  if (strncmp(key,"type",len) == 0)      { p_data[i]->type=SvIV(*value); };
+			  if (strncmp(key,"method",len) == 0)    { p_data[i]->method=SvIV(*value); };
+			  if (strncmp(key,"user_list",len) == 0) { p_data[i]->user_list=XS_unpack_charPtrPtr(*value);};
+			  if (strncmp(key,"host_list",len) == 0) { p_data[i]->host_list=XS_unpack_charPtrPtr(*value); };
+			  if (strncmp(key,"job_list",len) == 0)  { p_data[i]->job_list=XS_unpack_charPtrPtr(*value); };
+		      }
+		  }
+		}
+		/* Now make the call */
+		RETVAL=ll_preempt_jobs(LL_API_VERSION,&errObj,p_data);
+		if (RETVAL != API_OK) 
+		{
+	            sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
 		}
 	    }
-	    /* Now make the call */
-	    rc=ll_preempt_jobs(LL_API_VERSION,&errObj,p_data);
-            if (rc != API_OK) 
-	    {
-	        sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
-	    }
-	    XSRETURN_IV(rc);
 	}
-
+        OUTPUT:
+	    RETVAL
 
 #endif
 
@@ -3903,7 +3938,6 @@ ll_start_job_ext(info)
 	    char *key;
 	    
 	    
-	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 	    /* Iterate over all hash elements */
 	    count=hv_iterinit(info);
 	    for(i=0;i!=count;i++)
@@ -3964,74 +3998,151 @@ ll_cluster(action,cluster_list)
 	int action
 	char **cluster_list
 
-	PPCODE:
+	CODE:
 	{
-	    int rc;
 	    LL_element        *errObj = NULL;
 	    LL_cluster_param   param;
 
 
-	    RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 	    param.action=action;
             param.cluster_list=cluster_list;
 
-	    rc=ll_cluster(LL_API_VERSION,&errObj,&param);
+	    RETVAL=ll_cluster(LL_API_VERSION,&errObj,&param);
 
-            if (rc != CLUSTER_SUCCESS )
+            if (RETVAL != CLUSTER_SUCCESS )
             {
 	      sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
 	    }
-	    XSRETURN_IV(rc);
 	}
-
+	OUTPUT:
+		RETVAL
 
 int
 ll_cluster_auth()
 
-	PPCODE:
+	CODE:
 	{
-		int rc;
 	    	LL_element        *errObj = NULL;
 	 	LL_cluster_auth_param auth_param;
  		LL_cluster_auth_param *param_list[2];
 
-		RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 		/* Set type to generate keys */
 		auth_param.type = CLUSTER_AUTH_GENKEY;
 		
 		param_list[0] = &auth_param;
 		param_list[1] = NULL;
 
-		rc = ll_cluster_auth(LL_API_VERSION, &errObj, param_list);
+		RETVAL = ll_cluster_auth(LL_API_VERSION, &errObj, param_list);
 
-		if (rc != API_OK) 
+		if (RETVAL != API_OK) 
 		{
 		  sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
 		}
-		XSRETURN_IV(rc);
 	}
+	OUTPUT:
+		RETVAL
 
-int
+
+int  
 ll_fair_share(operation,dir,file)
      int    operation
      char  *dir
      char  *file
 
-     PPCODE:
+     CODE:
      {
-         int                  rc;
 	 LL_element          *errObj=NULL;
          LL_fair_share_param  param;
 
-	 RETVAL=(int)targ; /* bogus but spresses any unused variable error messages */
 	 param.operation=operation;
          param.savedir=dir;
 	 param.savedfile=file;
 
-	 rc=ll_fair_share(LL_API_VERSION,&errObj,&param);
-	 if (rc != API_OK )
+	 RETVAL=ll_fair_share(LL_API_VERSION,&errObj,&param);
+	 if (RETVAL != API_OK )
 	 {
 	   sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
 	 }
-	 XSRETURN_IV(rc);
      }
+     OUTPUT:
+         RETVAL
+
+#if LLVER >= 3040000
+
+int
+ll_move_job(cluster_name,job_id)
+     char *cluster_name
+     char *job_id
+
+     CODE:
+     {    
+	    LL_element        *errObj = NULL;
+	    LL_move_job_param param;
+	    LL_move_job_param *param_list[2];
+
+            param.cluster_name=cluster_name; 
+            param.job_id=job_id; 
+	    
+	    param_list[0]=&param;
+	    param_list[1]=NULL;
+
+	    RETVAL=ll_move_job(LL_API_VERSION,&errObj,param_list);
+	    if (RETVAL != API_OK) 
+	    {
+		sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
+	    }
+     }
+     OUTPUT:
+         RETVAL
+
+int
+ll_move_spool(host,directory)
+     char *host
+     char *directory
+
+     CODE:
+     {    
+	    LL_element          *errObj = NULL;
+	    LL_move_spool_param  param;
+	    LL_move_spool_param *param_list[2];
+	    int (*func)(char *, int, LL_element **) = _ll_print_job_status;
+
+	    param.data = LL_MOVE_SPOOL_JOBS;
+            param.spool_directory=directory; 
+	    /* schedd_host is a list !!! */
+	    param.schedd_host = ( char **)calloc(2,sizeof(char *));
+	    param.schedd_host[0] = host;
+	    param.schedd_host[1] = NULL;
+            
+	    
+	    param_list[0]=&param;
+	    param_list[1]=NULL;
+
+	    RETVAL=ll_move_spool(LL_API_VERSION,param_list,func,&errObj);
+	    free(param.schedd_host);
+
+	    if (RETVAL != API_OK) 
+	    {
+		sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);
+	    }
+     }
+     OUTPUT:
+         RETVAL
+
+int
+ll_read_config()
+
+    CODE:
+    {    
+         LL_element *errObj=NULL;
+
+	 RETVAL=ll_read_config(&errObj);
+	 if (RETVAL != API_OK )
+	 {
+	   sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
+	 }
+    }
+     OUTPUT:
+         RETVAL
+
+#endif

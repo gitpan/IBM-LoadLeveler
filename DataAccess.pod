@@ -18,7 +18,7 @@ IBM::LoadLeveler - Data Access API
   $return = ll_set_request( $query,QUERY_ALL|QUERY_JOBID|QUERY_STEPID|\
 	QUERY_GROUP|QUERY_CLASS|QUERY_HOST|QUERY_STARTDATE|QUERY_ENDDATE|\
 	QUERY_PROCID|QUERY_RESERVATION_ID|QUERY_BG_JOB|QUERY_BG_PARTITION|\
-        QUERY_BG_BASE_PARTITION, \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
+        QUERY_BG_BASE_PARTITION|QUERY_TOP_DOG, \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
 
   $object = ll_get_objs( $query, LL_STARTD|LL_SCHEDD|LL_CM|LL_MASTER|\
 	LL_STARTER|LL_HISTORY_FILE, $hostname, $number_of_objs, $error_code);
@@ -167,32 +167,31 @@ The permissable Query Flags depends on the type of query being made.  The flags 
 =item * QUERY_BG_BASE_PARTITIONS
 : Query Blue Gene base partitions
 
+=item * QUERY_TOP_DOG
+: Query by Job steps that are top dogs
+
 =back
 
 They can be used with the following query types:
 
-=begin text
 	Query Type	Permitted Flags
 	-------------------------------
-	JOBS		QUERY_ALL QUERY_JOBID QUERY_STEPID QUERY_USER QUERY_GROUP QUERY_CLASS QUERY_HOST QUERY_STARTDATE QUERY_ENDDATE QUERY_PROCID
-	MACHINES	QUERY_ALL QUERY_HOST
-	CLUSTER		QUERY_ALL
-	CLASSES		QUERY_ALL QUERY_CLASS
-	WLMSTAT		QUERY_STEPID
-	MATRIX		QUERY_ALL QUERY_HOST
-	RESERVATIONS	QUERY_ALL QUERY_USER QUERY_GROUP QUERY_HOST QUERY_RESERVATION_ID
-        MCLUSTERS       QUERY_ALL
         BLUE_GENE       QUERY_ALL QUERY_BG_BASE_PARTITION QUERY_BG_PARTITION
+        CLASSES         QUERY_ALL QUERY_CLASS
+        CLUSTER         QUERY_ALL
         FAIRSHARE       QUERY_ALL QUERY_USER QUERY_GROUP
-
-=end text
+        JOBS            QUERY_ALL QUERY_BG_JOB QUERY_CLASS QUERY_ENDDATE QUERY_GROUP QUERY_HOST QUERY_JOBID QUERY_RESERVATION_ID QUERY_STARTDATE QUERY_STEPID QUERY_USER QUERY_TOP_DOG
+        MACHINES        QUERY_ALL QUERY_HOST
+        MATRIX          QUERY_ALL QUERY_HOST
+        MCLUSTERS       QUERY_ALL
+        RESERVATIONS    QUERY_ALL QUERY_BG_BASE_PARTITION QUERY_GROUP QUERY_HOST QUERY_RESERVATION_ID QUERY_USER
+        WLMSTAT         QUERY_STEPID
 
 =item 3 $ObjectFilter
 
 
 Specifies the search criteria:
 
-=begin text
 	Query Flag	Filter
 	---------------------------------------
 	QUERY_ALL	undef
@@ -207,10 +206,7 @@ Specifies the search criteria:
 	QUERY_RESERVATION_ID	Array reference containing a list of reervation IDs.
         QUERY_BG_BASE_PARTITION Array reference of base partition IDs. For all base partitions, the first entry in the list must contain the string "all"
         QUERY_BG_PARTITION Array reference of partition IDs. For all base partitions, the first entry in the list must contain the string "all"
-
-
-=end text
-
+        QUERY_TOP_DOG    Array reference of job steps
 =over 4
 
 =item NOTE:
@@ -417,7 +413,7 @@ The Blue Gene arrays are all 3 elements in size.
 
 =head1 AUTHOR
 
-Mike Hawkins <Mike.Hawkins@awe.co.uk>
+Mike Hawkins <mike@pink-pit.com>
 
 =head1 SEE ALSO
 

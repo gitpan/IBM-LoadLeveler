@@ -13,6 +13,7 @@ Reservation.pod
 Submit.pod
 Workload.pod
 Error.pod
+Fairshare.pod
 TODO
 examples/cluster
 examples/getprocid
@@ -40,5 +41,6 @@ t/01version.t
 t/02submit.t
 t/03data_access.t
 t/04int_types.t
+t/05config.t
 typemap
 META.yml                                 Module meta-data (added by MakeMaker)

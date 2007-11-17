@@ -64,7 +64,7 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
 		QUERY_GROUP|QUERY_CLASS|QUERY_HOST|QUERY_STARTDATE|\
 		QUERY_ENDDATE|QUERY_PROCID|QUERY_RESERVATION_ID|
                 QUERY_BG_JOB|QUERY_BG_PARTITION|QUERY_BG_BASE_PARTITION,\
-		 \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
+		QUERY_TOP_DOG, \@filter,ALL_DATA|Q_LINE|STATUS_LINE );
 
   $object = ll_get_objs( $query, LL_STARTD|LL_SCHEDD|LL_CM|LL_MASTER|\
 		LL_STARTER|LL_HISTORY_FILE, $hostname, $number_of_objs, $error_code);
@@ -81,7 +81,7 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
 
   # Reservation API
 
-  ($result,$object) = ll_make_reservation($start_time,$duration,RESERVATION_BY_NODE|RESERVATION_BY_HOSTLIST|RESERVATION_BY_JOBSTEP|RESERVATION_BY_JCF,$data,$options,\@users,\@groups,$group);
+  $resid = ll_make_reservation($start_time,$duration,RESERVATION_BY_NODE|RESERVATION_BY_HOSTLIST|RESERVATION_BY_JOBSTEP|RESERVATION_BY_JCF,$data,$options,\@users,\@groups,$group);
 
   $result = ll_change_reservation($ID,%param);
 
@@ -99,6 +99,12 @@ IBM::LoadLeveler - Perl Access to IBM LoadLeveler API
 
   $rc=ll_fair_share(FAIR_SHARE_RESET|FAIR_SHARE_SAVE,savedir,savefile);
 
+  # Configuration API
+
+  $rc=ll_config_changed();
+
+  $rc=ll_read_config();
+
 =head1 DESCRIPTION
 
 This module provides access to the APIs of the IBM LoadLeveler Workload Management System.  The APIs currently implemented are:
@@ -115,7 +121,7 @@ This module provides access to the APIs of the IBM LoadLeveler Workload Manageme
 
 =item * L<Workload Management|Workload>
 
-=item * L<Fair Share Scheduling|FairShare>
+=item * L<Fair Share Scheduling|Fairshare>
 
 =item * L<Error Handling|Error>
 
@@ -412,6 +418,32 @@ These are the changes I know of for arguments to ll_get_data:
  LL_StepMcmAffinityOptions
  LL_AdapterUsageExclusive
 
+=item * 3.4.2.1
+ LL_StepTaskAffinity
+ LL_StepCpusPerCore
+ LL_StepIsTopDog
+ LL_StepConsideredAt
+ LL_StepEstimatedStartTime
+ LL_StepUserHoldTime
+ LL_StepQueueId
+ LL_StepQueueIndex
+ LL_ClassExcludeBg
+ LL_ClassIncludeBg
+ LL_BgBPIONodeCount
+ LL_BgPartitionUserList
+ LL_BgPartitionIONodeCount
+ LL_BgPartitionCnLoadImage
+ LL_BgPartitionIoLoadImage
+ LL_BgPartitionIONodeList
+ LL_BgNodeCardSubDividedBusy
+ LL_BgNodeCardIONodeCount
+ LL_BgNodeCardGetFirstIONode
+ LL_BgNodeCardGetNextIONode
+ LL_BgIONodeId
+ LL_BgIONodeIPAddr
+ LL_BgIONodeCurrentPartition
+ LL_BgIONodeCurrentPartitionState
+ LL_BgPartitionBLRTSImage
 =back
 
 =head2 64 bit types and 32 bit perl

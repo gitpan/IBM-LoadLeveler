@@ -1,6 +1,12 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
-1.06  Fri Oct  6 17:05 2006
+1.07  Fri Sep 21 13:30 2007
+        - Added support for version 3.4.1.0 & 3.4.2.1
+	- Added Configuration API
+	- Added Workload API function ll_move_job & ll_move_spool
+	- Removed status value return from ll_make_reservation
+
+1.06  Tue Sep 18 17:05 2007
 	- Added a few more llapi.h files so some definitions are now correctly
 	  in older versions.
 	- Initialised some variables to stop warnings on plinux.

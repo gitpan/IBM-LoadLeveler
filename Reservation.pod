@@ -9,13 +9,13 @@ IBM::LoadLeveler Reservation API
 
   # Reservation API
 
-  ($result,$object) = ll_make_reservation($start_time,$duration,RESERVATION_BY_NODE|RESERVATION_BY_HOSTLIST|RESERVATION_BY_JOBSTEP|RESERVATION_BY_JCF,$data,$options,\@users,\@groups,$group);
+  $resid = ll_make_reservation($start_time,$duration,RESERVATION_BY_NODE|RESERVATION_BY_HOSTLIST|RESERVATION_BY_JOBSTEP|RESERVATION_BY_JCF,$data,$options,\@users,\@groups,$group);
 
-  ($result,$error) = ll_change_reservation($ID,%param);
+  $result = ll_change_reservation($ID,%param);
 
-  ($result,$error) = ll_bind(\@jobsteplist,$ID,$unbind)
+  $result = ll_bind(\@jobsteplist,$ID,$unbind)
 
-  ($result,$error) = ll_remove_reservation(\@IDs,\@user_list,\@host_list,\@group_list)
+  $result = ll_remove_reservation(\@IDs,\@user_list,\@host_list,\@group_list)
 
 =head1 DESCRIPTION
 
@@ -41,150 +41,60 @@ B<NOTE:> I do not like the way errors are being returned by these calls and I mi
 
 =item ll_make_reservation
 
-  ($result,$resid) = ll_make_reservation($start_time,$duration,RESERVATION_BY_NODE|RESERVATION_BY_HOSTLIST|RESERVATION_BY_JOBSTEP|RESERVATION_BY_JCF,$data,$options,\@users,\@groups,$group);
+  $resid = ll_make_reservation($start_time,$duration,RESERVATION_BY_NODE|RESERVATION_BY_HOSTLIST|RESERVATION_BY_JOBSTEP|RESERVATION_BY_JCF,$data,$options,\@users,\@groups,$group);
 
-Surprise! This function allows you to create a LoadLeveler version.  The type and content of the $data variable depends on the reservation type you are creating:
+Surprise! This function allows you to create a LoadLeveler reservation.  The type and content of the $data variable depends on the reservation type you are creating:
 
 
-=begin text
-	Reservation Data Type		How the nodes are reserved	Perl variable
+	Reservation Data Type		How the nodes are reserved	 Perl variable
 	--------------------------------------------------------------------------------
-	RESERVATION_BY_NODE		By number of nodes			$integer
-	RESERVATION_BY_HOSTLIST		By specifying a host list		\@hosts
-	RESERVATION_BY_JOBSTEP		By specifying a job step		$jobstep
-	RESERVATION_BY_JCF		By specifying a job command file	$jcf
+	RESERVATION_BY_NODE		By number of nodes		 $integer
+	RESERVATION_BY_HOSTLIST		By specifying a host list	 \@hosts
+	RESERVATION_BY_JOBSTEP		By specifying a job step	 $jobstep
+	RESERVATION_BY_JCF		By specifying a job command file $jcf
+        RESERVATION_BY_BG_CNODE         By number of Blue Gene c-nodes   $integer
+        RESERVATION_BY_HOSTFILE         By specifying a host file        $string
 
-=end text
 
-=begin html
-<table border="1">
-<tr>
-<th>	Reservation Data Type	</th><th>	How the nodes are reserved</th><th>	Perl variable</th>
-</tr>
-<tr>
-<td>	RESERVATION_BY_NODE	</td><td>	By number of nodes	</td><td>		$integer</td>
-</tr>
-<tr>
-<td>	RESERVATION_BY_HOSTLIST	</td><td>	By specifying a host list</td><td>		\@hosts</td>
-</tr>
-<tr>
-<td>	RESERVATION_BY_JOBSTEP	</td><td>	By specifying a job step</td><td>		$jobstep</td>
-</tr>
-<tr>
-<td>	RESERVATION_BY_JCF	</td><td>	By specifying a job command file</td><td>	$jcf</td>
-</tr>
-</table>
+If $resid is not undef then it is a string containing the reservation ID.
 
-=end html
-
-If $result == 0 then $resid is a string containing the reservation ID. Otherwise it is a pointer to an error object which can be passed to ll_error.
-
-B<NOTE:> This function makes it's own call to ll_init_reservation_param, hence it is not available via this module.
+B<NOTE:>
+1. This function makes it's own call to ll_init_reservation_param, hence it is not available via this module.
+2. The return of this function changed in 1.07 from ($result,$resid)
 
 =item ll_change_reservation
 
-  ($result,$error) = ll_change_reservation($ID,%param);
+  $result = ll_change_reservation($ID,%param);
 
 The ll_change_reservation call is quite complicated and slightly different from the C version.  In addition since the current version only allows one reservation to be modified the call takes an ID string of a reservation and not an array of IDs.
 
 The %param uses the following keys and data types:
 
-=begin text
-To modify	Specify				Type of New Data
------------------------------------------------------------------
-start_time	RESERVATION_START_TIME		$string
-start_time	RESERVATION_ADD_START_TIME	$int
-duration	RESERVATION_DURATION		$int
-duration	RESERVATION_ADD_DURATION	$int
-number_of_nodes RESERVATION_BY_NODE		$int
-number_of_nodes RESERVATION_ADD_NUM_NODE	$int
-hostlist	RESERVATION_BY_HOSTLIST		\@hostlist
-hostlist	RESERVATION_ADD_HOSTS		\@hostlist
-hostlist	RESERVATION_DEL_HOSTS		\@hostlist
-jobstep		RESERVATION_BY_JOBSTEP		$string
-job_command_file RESERVATION_BY_JCF		$string
-userlist	RESERVATION_USERLIST		\@userlist
-userlist	RESERVATION_ADD_USERS		\@userlist
-userlist	RESERVATION_DEL_USERS		\@userlist
-grouplist	RESERVATION_GROUPLIST		\@grouplist
-grouplist	RESERVATION_ADD_GROUPS		\@grouplist
-grouplist	RESERVATION_DEL_GROUPS		\@grouplist
-shared mode	RESERVATION_MODE_SHARED		$int
-remove on idle mode RESERVATION_MODE_REMOVE_ON_IDLE	$int
-owner		RESERVATION_OWNER		$string
-group		RESERVATION_GROUP		$string
-
-=end text
-
-=begin html
-<table border="1">
-<tr>
-<th>To modify</th><th>	Specify</th><th>				Type of New Data</th>
-</tr>
-<tr>
-<td>start_time </td><td>	RESERVATION_START_TIME	</td><td>	$string</td>
-</tr>
-<tr>
-<td>start_time</td><td>	RESERVATION_ADD_START_TIME</td><td>	$int</td>
-</tr>
-<tr>
-<td>duration	</td><td>RESERVATION_DURATION	</td><td>	$int</td>
-</tr>
-<tr>
-<td>duration	</td><td>RESERVATION_ADD_DURATION</td><td>	$int</td>
-</tr>
-<tr>
-<td>number_of_nodes </td><td>RESERVATION_BY_NODE</td><td>		$int</td>
-</tr>
-<tr>
-<td>number_of_nodes </td><td>RESERVATION_ADD_NUM_NODE</td><td>	$int</td>
-</tr>
-<tr>
-<td>hostlist</td><td>	RESERVATION_BY_HOSTLIST	</td><td>	\@hostlist</td>
-</tr>
-<tr>
-<td>hostlist</td><td>	RESERVATION_ADD_HOSTS</td><td>		\@hostlist</td>
-</tr>
-<tr>
-<td>hostlist</td><td>	RESERVATION_DEL_HOSTS	</td><td>	\@hostlist</td>
-</tr>
-<tr>
-<td>jobstep</td><td>		RESERVATION_BY_JOBSTEP	</td><td>	$string</td>
-</tr>
-<tr>
-<td>job_command_file </td><td>RESERVATION_BY_JCF</td><td>		$string</td>
-</tr>
-<tr>
-<td>userlist</td><td>	RESERVATION_USERLIST	</td><td>	\@userlist</td>
-</tr>
-<tr>
-<td>userlist</td><td>	RESERVATION_ADD_USERS	</td><td>	\@userlist</td>
-</tr>
-<tr>
-<td>userlist</td><td>	RESERVATION_DEL_USERS	</td><td>	\@userlist</td>
-</tr>
-<tr>
-<td>grouplist</td><td>	RESERVATION_GROUPLIST	</td><td>	\@grouplist</td>
-</tr>
-<tr>
-<td>grouplist</td><td>	RESERVATION_ADD_GROUPS</td><td>		\@grouplist</td>
-</tr>
-<tr>
-<td>grouplist</td><td>	RESERVATION_DEL_GROUPS</td><td>		\@grouplist</td>
-</tr>
-<tr>
-<td>shared mode	</td><td>RESERVATION_MODE_SHARED	</td><td>	$int</td>
-</tr>
-<tr>
-<td>remove on idle mode</td><td> RESERVATION_MODE_REMOVE_ON_IDLE</td><td>	$int</td>
-</tr>
-<tr>
-<td>owner</td><td>		RESERVATION_OWNER</td><td>		$string</td>
-</tr>
-<tr>
-<td>group</td><td>		RESERVATION_GROUP</td><td>		$string</td>
-</tr>
-</table>
+ To modify	     Specify			     Type of New Data
+ -----------------------------------------------------------------
+ start_time	     RESERVATION_START_TIME	     $string
+ start_time	     RESERVATION_ADD_START_TIME	     $int
+ duration	     RESERVATION_DURATION	     $int
+ duration	     RESERVATION_ADD_DURATION	     $int
+ number_of_nodes     RESERVATION_BY_NODE             $int
+ number_of_nodes     RESERVATION_ADD_NUM_NODE 	     $int
+ hostlist	     RESERVATION_BY_HOSTLIST	     \@hostlist
+ hostlist	     RESERVATION_ADD_HOSTS	     \@hostlist
+ hostlist	     RESERVATION_DEL_HOSTS	     \@hostlist
+ jobstep	     RESERVATION_BY_JOBSTEP	     $string
+ job_command_file    RESERVATION_BY_JCF		     $string
+ userlist	     RESERVATION_USERLIST	     \@userlist
+ userlist	     RESERVATION_ADD_USERS	     \@userlist
+ userlist	     RESERVATION_DEL_USERS	     \@userlist
+ grouplist 	     RESERVATION_GROUPLIST	     \@grouplist
+ grouplist	     RESERVATION_ADD_GROUPS	     \@grouplist
+ grouplist	     RESERVATION_DEL_GROUPS	     \@grouplist
+ shared mode	     RESERVATION_MODE_SHARED	     $int
+ remove on idle mode RESERVATION_MODE_REMOVE_ON_IDLE $int
+ owner		     RESERVATION_OWNER		     $string
+ group		     RESERVATION_GROUP		     $string
+ hostfile            RESERVATION_BY_HOSTFILE         $string
+ number_of_bg_cnodes RESERVATION_BY_BG_CNODE         $int
 
 eg:
 
@@ -192,16 +102,13 @@ eg:
 	my %RES=();
 	$RES{"RESERVATION_START_TIME"}="23:01";
 	$RES{"RESERVATION_DURATION"}=30;
-	($rc,$res)=ll_change_reservation($res,\%RES);
+	$rc=ll_change_reservation($res,\%RES);
 
-
-=end html
-
-If $result != 0 then $error contains an error object that may be passed to ll_error
+If $result != 0 then $IBM::LoadLeveler::errObj contains an error object that may be passed to ll_error
 
 =item ll_bind
 
-  ($result,$error) = ll_bind(\@jobsteplist,$ID,$unbind)
+  $result = ll_bind(\@jobsteplist,$ID,$unbind)
 
 Bind or unbind a list of job steps to a reservation ID.  If $unbind == 1 then the jobs steps are unbound from the reervation otherwise they will be bound to the reservation.
 
@@ -209,7 +116,7 @@ If $result != 0 then $error contains an error object that may be passed to ll_er
 
 =item ll_remove_reservation
 
-	($result,$error) = ll_remove_reservation(\@IDs,\@user_list,\@host_list,\@group_list)
+	$result = ll_remove_reservation(\@IDs,\@user_list,\@host_list,\@group_list)
 
 This function allows you to cancel one or more reservations.
 

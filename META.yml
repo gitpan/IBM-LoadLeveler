@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                IBM-LoadLeveler
-version:             1.06
+version:             1.07
 abstract:            Perl Access to IBM LoadLeveler API
 license:             ~
 generated_by:        ExtUtils::MakeMaker version 6.36
@@ -10,4 +10,4 @@ meta-spec:
     url:     http://module-build.sourceforge.net/META-spec-v1.2.html
     version: 1.2
 author:
-    - Mike Hawkins <mike.hawkins\@awe.co.uk>
+    - Mike Hawkins <mike\@pink-pit.com>

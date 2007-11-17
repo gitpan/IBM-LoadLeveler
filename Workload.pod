@@ -11,15 +11,15 @@ IBM::LoadLeveler Workload Management API
 
   $rc=ll_control($control_op,\@host_list,\@user_list,\@job_list,\@class_list,$priority);
 
-  $rc=llctl(LL_CONTROL_RECYCLE| LL_CONTROL_RECONFIG| LL_CONTROL_START|\
-	LL_CONTROL_STOP| LL_CONTROL_DRAIN| LL_CONTROL_DRAIN_STARTD|\
-	LL_CONTROL_DRAIN_SCHEDD| LL_CONTROL_PURGE_SCHEDD| LL_CONTROL_FLUSH|\
-	LL_CONTROL_SUSPEND| LL_CONTROL_RESUME| LL_CONTROL_RESUME_STARTD|\
-	LL_CONTROL_RESUME_SCHEDD| LL_CONTROL_FAVOR_JOB| LL_CONTROL_UNFAVOR_JOB|\
-	LL_CONTROL_FAVOR_USER| LL_CONTROL_UNFAVOR_USER|\
-	LL_CONTROL_HOLD_USER| LL_CONTROL_HOLD_SYSTEM| LL_CONTROL_HOLD_RELEASE|\
-	LL_CONTROL_PRIO_ABS| LL_CONTROL_PRIO_ADJ| LL_CONTROL_START_DRAINED\
-		,\@host_list,\@class_list);
+  $rc=llctl(LL_CONTROL_RECYCLE| LL_CONTROL_RECONFIG| LL_CONTROL_START,LL_CONTROL_STOP|\
+            LL_CONTROL_DRAIN| LL_CONTROL_DRAIN_STARTD| LL_CONTROL_DRAIN_SCHEDD|\
+            LL_CONTROL_PURGE_SCHEDD| LL_CONTROL_FLUSH| LL_CONTROL_SUSPEND|\
+            LL_CONTROL_RESUME| LL_CONTROL_RESUME_STARTD| LL_CONTROL_RESUME_SCHEDD|\
+            LL_CONTROL_FAVOR_JOB| LL_CONTROL_UNFAVOR_JOB| LL_CONTROL_FAVOR_USER|\
+            LL_CONTROL_UNFAVOR_USER| LL_CONTROL_HOLD_USER| LL_CONTROL_HOLD_SYSTEM|\
+            LL_CONTROL_HOLD_RELEASE| LL_CONTROL_PRIO_ABS| LL_CONTROL_PRIO_ADJ|\
+            LL_CONTROL_START_DRAINED| LL_CONTROL_DUMP_LOGS\ 
+            ,\@host_list,\@class_list);
 
   $rc=llfavorjob(LL_CONTROL_FAVOR_JOB|LL_CONTROL_UNFAVOR_JOB,\@job_list);
 
@@ -37,12 +37,14 @@ IBM::LoadLeveler Workload Management API
 
    $rc=ll_run_scheduler($obj);
 
- 
    $rc=ll_start_job_ext(\%Info);
-   
+
    $rc=ll_cluster(CLUSTER_SET|CLUSTER_UNSET,\@cluster_list);
    $rc=ll_cluster_auth();
- 
+
+   $rc=ll_move_job($cluster_name,$job_id);
+   $rc=ll_move_spool($schedd_host,$directory);
+
 =head1 DESCRIPTION
 
 The Workload Management API has the following functions:
@@ -78,6 +80,10 @@ The Workload Management API has the following functions:
 =item ll_cluster
 
 =item ll_cluster_auth
+
+=item ll_move_job
+
+=item ll_move_spool
 
 =back
 
@@ -130,6 +136,24 @@ and the permitted methods are:
  LL_PREEMPT_REMOVE
  LL_PREEMPT_SYS_HOLD
  LL_PREEMPT_USER_HOLD
+
+
+=item ll_move_job
+
+  $rc=ll_move_job($cluster_name,$job_id);
+
+This function moves a single job from one cluster to another in a multi-cluster environment. The syntax has been simplified from the C version by removing the LL_move_job_param list and just supplying the parameters. On success API_OK is returned, anything else the $IBM::LoadLeveler::errObj is set and can be access using ll_error.
+ll_move_spool
+
+=item ll_move_spool
+
+  $rc=ll_move_spool($schedd_host,$directory);
+
+This is yet another function that has been simplified for ease of use. Instead of taking a list of LL_move_spool_param structs, the syntax has been simplified from the C version to only require the target schedd_host and the spool directory containing the job records to be moved.
+
+The user supplied function that this routine could take has been hardcoded with one that prints the error message if there is one.
+
+On success API_OK is returned, anything else the $IBM::LoadLeveler::errObj is set and can be access using ll_error.
 
 =back
 

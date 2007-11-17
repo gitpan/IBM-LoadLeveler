@@ -53,7 +53,7 @@ elsif  ( $OS eq "AIX" )
 {
     $LoadL="/usr/lpp/LoadL/full";
     $ExtraLibs="";
-    $CC="xlc";
+    $CC=$ExtUtils::MakeMaker::Config{"cc"};
 
     #
     # The code extracts the package version using lslpp.
@@ -99,7 +99,7 @@ WriteMakefile(
     'PREREQ_PM'		=> {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM    => 'LoadLeveler.pod', # retrieve abstract from module
-       AUTHOR           => 'Mike Hawkins <mike.hawkins\@awe.co.uk>') : ()),
+       AUTHOR           => 'Mike Hawkins <mike\@pink-pit.com>') : ()),
     'PM'                => { 'llapi.ph'        => '$(INST_LIBDIR)/llapi.ph',
 			     'LoadLeveler.pm'  => '$(INST_LIBDIR)/LoadLeveler.pm'
 			   },
@@ -110,6 +110,7 @@ WriteMakefile(
 			     'Workload.pod'    => '$(INST_MAN3DIR)/LoadLeveler::Workload.$(MAN3EXT)',
 			     'Reservation.pod' => '$(INST_MAN3DIR)/LoadLeveler::Reservation.$(MAN3EXT)',
 			     'Error.pod'       => '$(INST_MAN3DIR)/LoadLeveler::Error.$(MAN3EXT)',
+			     'Fairshare.pod'   => '$(INST_MAN3DIR)/LoadLeveler::Fairshare.$(MAN3EXT)',
 			   },
     'LIBS'		=> ["-L$LoadL/lib -lllapi $ExtraLibs"], # e.g., '-lm'
     'DEFINE'		=> "-DLLVER=$LLVER -L$LoadL/lib",
@@ -132,6 +133,7 @@ html: LoadLeveler.pm DataAccess.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Query.html Query.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Workload.html Workload.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Error.html Error.pod
+	pod2html --noindex --podpath=. --htmlroot=. --outfile=Fairshare.html Fairshare.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=LoadLeveler.html LoadLeveler.pod
 END
     $postamble;

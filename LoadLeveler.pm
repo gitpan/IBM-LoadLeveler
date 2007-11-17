@@ -57,11 +57,16 @@ my @function_defs = qw ( ll_version
 			 ll_cluster
 			 ll_cluster_auth
 			 ll_fair_share
+                         ll_config_changed
+                         ll_read_config
+			 ll_move_job
+			 ll_move_spool
 		       );
 
 # These definitions are genertaed by enum_sucker.pl
 
 my @enums_3100 = qw (
+		     API_OK
 		     PREEMPT_STEP
 		     RESUME_STEP
 		     LL_STARTD
@@ -829,174 +834,308 @@ my @enums_3301 = qw (
 		     LL_ClusterEnforceMemory
 		    );
 my @enums_3310 = qw (
-			BLUE_GENE
-QUERY_BG_JOB
-QUERY_BG_BASE_PARTITION
-QUERY_BG_PARTITION
-COMMLVL_UNSPECIFIED
-LL_JobUsersJCF
-LL_StepFavoredJob
-LL_StepBgJobId
-LL_StepBgState
-LL_StepBgSizeRequested
-LL_StepBgSizeAllocated
-LL_StepBgShapeRequested
-LL_StepBgShapeAllocated
-LL_StepBgConnectionRequested
-LL_StepBgConnectionAllocated
-LL_StepBgPartitionRequested
-LL_StepBgPartitionAllocated
-LL_StepBgPartitionState
-LL_StepBgErrorText
-LL_MachineUsedCPUs
-LL_MachineUsedCPUList
-LL_AdapterUsageRcxtBlocks
-LL_AdapterRcxtBlocks
-LL_AdapterReqRcxtBlks
-LL_MCMCPUs
-LL_BgMachineBPSize
-LL_BgMachineSize
-LL_BgMachineSwitchCount
-LL_BgMachineWireCount
-LL_BgMachinePartitionCount
-LL_BgMachineGetFirstBP
-LL_BgMachineGetNextBP
-LL_BgMachineGetFirstSwitch
-LL_BgMachineGetNextSwitch
-LL_BgMachineGetFirstWire
-LL_BgMachineGetNextWire
-LL_BgMachineGetFirstPartition
-LL_BgMachineGetNextPartition
-LL_BgBPId
-LL_BgBPState
-LL_BgBPLocation
-LL_BgBPSubDividedBusy
-LL_BgBPCurrentPartition
-LL_BgBPCurrentPartitionState
-LL_BgBPNodeCardCount
-LL_BgBPGetFirstNodeCard
-LL_BgBPGetNextNodeCard
-LL_BgSwitchId
-LL_BgSwitchBasePartitionId
-LL_BgSwitchState
-LL_BgSwitchDimension
-LL_BgSwitchConnCount
-LL_BgSwitchGetFirstConn
-LL_BgSwitchGetNextConn
-LL_BgPortConnToSwitchPort
-LL_BgPortConnFromSwitchPort
-LL_BgPortConnCurrentPartition
-LL_BgPortConnCurrentPartitionState
-LL_BgWireId
-LL_BgWireState
-LL_BgWireFromPortCompId
-LL_BgWireFromPortId
-LL_BgWireToPortCompId
-LL_BgWireToPortId
-LL_BgWireCurrentPartition
-LL_BgWireCurrentPartitionState
-LL_BgPartitionId
-LL_BgPartitionState
-LL_BgPartitionBPCount
-LL_BgPartitionSwitchCount
-LL_BgPartitionBPList
-LL_BgPartitionGetFirstSwitch
-LL_BgPartitionGetNextSwitch
-LL_BgPartitionNodeCardList
-LL_BgPartitionConnection
-LL_BgPartitionOwner
-LL_BgPartitionMode
-LL_BgPartitionSmall
-LL_BgPartitionMLoaderImage
-LL_BgPartitionBLRTSImage
-LL_BgPartitionLinuxImage
-LL_BgPartitionRamDiskImage
-LL_BgPartitionDescription
-LL_BgNodeCardId
-LL_BgNodeCardState
-LL_BgNodeCardQuarter
-LL_BgNodeCardCurrentPartition
-LL_BgNodeCardCurrentPartitionState
-BG_SIZE
-BG_SHAPE
-BG_CONNECTION
-BG_PARTITION
-BG_ROTATE
-MAX_MODIFY_OP
-BG_BP_UP
-BG_BP_DOWN
-BG_BP_MISSING
-BG_BP_ERROR
-BG_BP_NAV
-BG_PARTITION_FREE
-BG_PARTITION_CONFIGURING
-BG_PARTITION_READY
-BG_PARTITION_BUSY
-BG_PARTITION_DEALLOCATING
-BG_PARTITION_ERROR
-BG_PARTITION_NAV
-MESH
-TORUS
-BG_NAV
-PREFER_TORUS
-COPROCESSOR
-VIRTUAL_NODE
-BG_PORT_PLUS_X
-BG_PORT_MINUS_X
-BG_PORT_PLUS_Y
-BG_PORT_MINUS_Y
-BG_PORT_PLUS_Z
-BG_PORT_MINUS_Z
-BG_PORT_S0
-BG_PORT_S1
-BG_PORT_S2
-BG_PORT_S3
-BG_PORT_S4
-BG_PORT_S5
-BG_PORT_NAV
-BG_SWITCH_UP
-BG_SWITCH_DOWN
-BG_SWITCH_MISSING
-BG_SWITCH_ERROR
-BG_SWITCH_NAV
-BG_DIM_X
-BG_DIM_Y
-BG_DIM_Z
-BG_DIM_NAV
-BG_WIRE_UP
-BG_WIRE_DOWN
-BG_WIRE_MISSING
-BG_WIRE_ERROR
-BG_WIRE_NAV
-BG_NODE_CARD_UP
-BG_NODE_CARD_DOWN
-BG_NODE_CARD_MISSING
-BG_NODE_CARD_ERROR
-BG_NODE_CARD_NAV
-BG_QUARTER_Q1
-BG_QUARTER_Q2
-BG_QUARTER_Q3
-BG_QUARTER_Q4
-BG_QUARTER_Q_NAV
-BG_JOB_IDLE
-BG_JOB_STARTING
-BG_JOB_RUNNING
-BG_JOB_TERMINATED
-BG_JOB_KILLED
-BG_JOB_ERROR
-BG_JOB_DYING
-BG_JOB_DEBUG
-BG_JOB_LOAD
-BG_JOB_LOADED
-BG_JOB_BEGIN
-BG_JOB_ATTACH
-BG_JOB_NAV
-);
+		     BLUE_GENE
+		     QUERY_BG_JOB
+		     QUERY_BG_BASE_PARTITION
+		     QUERY_BG_PARTITION
+		     COMMLVL_UNSPECIFIED
+		     LL_JobUsersJCF
+		     LL_StepFavoredJob
+		     LL_StepBgJobId
+		     LL_StepBgState
+		     LL_StepBgSizeRequested
+		     LL_StepBgSizeAllocated
+		     LL_StepBgShapeRequested
+		     LL_StepBgShapeAllocated
+		     LL_StepBgConnectionRequested
+		     LL_StepBgConnectionAllocated
+		     LL_StepBgPartitionRequested
+		     LL_StepBgPartitionAllocated
+		     LL_StepBgPartitionState
+		     LL_StepBgErrorText
+		     LL_MachineUsedCPUs
+		     LL_MachineUsedCPUList
+		     LL_AdapterUsageRcxtBlocks
+		     LL_AdapterRcxtBlocks
+		     LL_AdapterReqRcxtBlks
+		     LL_MCMCPUs
+		     LL_BgMachineBPSize
+		     LL_BgMachineSize
+		     LL_BgMachineSwitchCount
+		     LL_BgMachineWireCount
+		     LL_BgMachinePartitionCount
+		     LL_BgMachineGetFirstBP
+		     LL_BgMachineGetNextBP
+		     LL_BgMachineGetFirstSwitch
+		     LL_BgMachineGetNextSwitch
+		     LL_BgMachineGetFirstWire
+		     LL_BgMachineGetNextWire
+		     LL_BgMachineGetFirstPartition
+		     LL_BgMachineGetNextPartition
+		     LL_BgBPId
+		     LL_BgBPState
+		     LL_BgBPLocation
+		     LL_BgBPSubDividedBusy
+		     LL_BgBPCurrentPartition
+		     LL_BgBPCurrentPartitionState
+		     LL_BgBPNodeCardCount
+		     LL_BgBPGetFirstNodeCard
+		     LL_BgBPGetNextNodeCard
+		     LL_BgSwitchId
+		     LL_BgSwitchBasePartitionId
+		     LL_BgSwitchState
+		     LL_BgSwitchDimension
+		     LL_BgSwitchConnCount
+		     LL_BgSwitchGetFirstConn
+		     LL_BgSwitchGetNextConn
+		     LL_BgPortConnToSwitchPort
+		     LL_BgPortConnFromSwitchPort
+		     LL_BgPortConnCurrentPartition
+		     LL_BgPortConnCurrentPartitionState
+		     LL_BgWireId
+		     LL_BgWireState
+		     LL_BgWireFromPortCompId
+		     LL_BgWireFromPortId
+		     LL_BgWireToPortCompId
+		     LL_BgWireToPortId
+		     LL_BgWireCurrentPartition
+		     LL_BgWireCurrentPartitionState
+		     LL_BgPartitionId
+		     LL_BgPartitionState
+		     LL_BgPartitionBPCount
+		     LL_BgPartitionSwitchCount
+		     LL_BgPartitionBPList
+		     LL_BgPartitionGetFirstSwitch
+		     LL_BgPartitionGetNextSwitch
+		     LL_BgPartitionNodeCardList
+		     LL_BgPartitionConnection
+		     LL_BgPartitionOwner
+		     LL_BgPartitionMode
+		     LL_BgPartitionSmall
+		     LL_BgPartitionMLoaderImage
+		     LL_BgPartitionBLRTSImage
+		     LL_BgPartitionLinuxImage
+		     LL_BgPartitionRamDiskImage
+		     LL_BgPartitionDescription
+		     LL_BgNodeCardId
+		     LL_BgNodeCardState
+		     LL_BgNodeCardQuarter
+		     LL_BgNodeCardCurrentPartition
+		     LL_BgNodeCardCurrentPartitionState
+		     BG_SIZE
+		     BG_SHAPE
+		     BG_CONNECTION
+		     BG_PARTITION
+		     BG_ROTATE
+		     MAX_MODIFY_OP
+		     BG_BP_UP
+		     BG_BP_DOWN
+		     BG_BP_MISSING
+		     BG_BP_ERROR
+		     BG_BP_NAV
+		     BG_PARTITION_FREE
+		     BG_PARTITION_CONFIGURING
+		     BG_PARTITION_READY
+		     BG_PARTITION_BUSY
+		     BG_PARTITION_DEALLOCATING
+		     BG_PARTITION_ERROR
+		     BG_PARTITION_NAV
+		     MESH
+		     TORUS
+		     BG_NAV
+		     PREFER_TORUS
+		     COPROCESSOR
+		     VIRTUAL_NODE
+		     BG_PORT_PLUS_X
+		     BG_PORT_MINUS_X
+		     BG_PORT_PLUS_Y
+		     BG_PORT_MINUS_Y
+		     BG_PORT_PLUS_Z
+		     BG_PORT_MINUS_Z
+		     BG_PORT_S0
+		     BG_PORT_S1
+		     BG_PORT_S2
+		     BG_PORT_S3
+		     BG_PORT_S4
+		     BG_PORT_S5
+		     BG_PORT_NAV
+		     BG_SWITCH_UP
+		     BG_SWITCH_DOWN
+		     BG_SWITCH_MISSING
+		     BG_SWITCH_ERROR
+		     BG_SWITCH_NAV
+		     BG_DIM_X
+		     BG_DIM_Y
+		     BG_DIM_Z
+		     BG_DIM_NAV
+		     BG_WIRE_UP
+		     BG_WIRE_DOWN
+		     BG_WIRE_MISSING
+		     BG_WIRE_ERROR
+		     BG_WIRE_NAV
+		     BG_NODE_CARD_UP
+		     BG_NODE_CARD_DOWN
+		     BG_NODE_CARD_MISSING
+		     BG_NODE_CARD_ERROR
+		     BG_NODE_CARD_NAV
+		     BG_QUARTER_Q1
+		     BG_QUARTER_Q2
+		     BG_QUARTER_Q3
+		     BG_QUARTER_Q4
+		     BG_QUARTER_Q_NAV
+		     BG_JOB_IDLE
+		     BG_JOB_STARTING
+		     BG_JOB_RUNNING
+		     BG_JOB_TERMINATED
+		     BG_JOB_KILLED
+		     BG_JOB_ERROR
+		     BG_JOB_DYING
+		     BG_JOB_DEBUG
+		     BG_JOB_LOAD
+		     BG_JOB_LOADED
+		     BG_JOB_BEGIN
+		     BG_JOB_ATTACH
+		     BG_JOB_NAV
+		    );
 my @enums_3311 = qw (
 		     LL_StepBgJobState
 		     LL_StepMcmAffinityOptions
 		     LL_AdapterUsageExclusive
 );
+
+my @enums_3401 = qw (
+                     UNUSED_MATRIX
+                     FAIRSHARE
+                     SERIAL_TYPE
+                     PARALLEL_TYPE
+                     BLUE_GENE_TYPE
+                     MPICH_TYPE
+                     LL_StepCoschedule
+                     LL_StepSMTRequired
+                     LL_StepMetaClusterJobID
+		     LL_StepMetaClusterJob
+		     LL_StepMasterVirtualIP
+		     LL_StepMasterRealIP
+		     LL_StepMasterNetmask
+		     LL_StepVipNetmask
+		     LL_StepMetaClusterPoeHostname
+		     LL_StepMetaClusterPoePmdPhysnet
+		     LL_StepCkptSubDir
+		     LL_TaskInstanceMachineVirtualIP
+		     LL_AdapterUsagePortNumber
+		     LL_AdapterUsageLmc
+		     LL_AdapterPortNumber
+		     LL_AdapterLmc
+		     LL_AdapterUsageNetworkId64
+		     LL_AdapterUsageDeviceDriver
+		     LL_AdapterUsageDeviceType
+		     LL_AdapterInterfaceNetmask
+		     LL_AdapterUsageVirtualIP
+		     LL_AdapterUsageNetmask
+		     LL_ClassGetFirstUser
+		     LL_ClassGetNextUser
+		     LL_ClassDefWallClockLimitHard
+		     LL_ClassDefWallClockLimitSoft
+		     LL_ReservationBgCNodes
+		     LL_ReservationBgConnection
+		     LL_ReservationBgShape
+		     LL_ReservationBgBPs
+		     LL_BgBPCnodeMemory
+		     LL_BgPartitionSize
+		     LL_BgPartitionShape
+		     LL_FairShareCurrentTime
+		     LL_FairShareTotalShares
+		     LL_FairShareInterval
+		     LL_FairShareNumberOfEntries
+		     LL_FairShareEntryNames
+		     LL_FairShareEntryTypes
+		     LL_FairShareAllocatedShares
+		     LL_FairShareUsedShares
+		     LL_FairShareUsedBgShares
+		     LL_ClassUserName
+		     LL_ClassUserMaxIdle
+		     LL_ClassUserMaxQueued
+		     LL_ClassUserMaxJobs
+		     LL_ClassUserMaxTotalTasks
+		     BG_REQUIREMENTS
+		     LL_MOVE_SPOOL_JOBS
+		     RESERVATION_BY_BG_CNODE
+		     BG_BP_COMPUTENODE_MEMORY_256M
+		     BG_BP_COMPUTENODE_MEMORY_512M
+		     BG_BP_COMPUTENODE_MEMORY_1G
+		     BG_BP_COMPUTENODE_MEMORY_2G
+		     BG_BP_COMPUTENODE_MEMORY_4G
+		     BG_BP_COMPUTENODE_MEMORY_NAV
+		     FAIR_SHARE_RESET
+		     FAIR_SHARE_SAVE
+		    );
+my @enums_3404 = qw (
+		     SMT_OFF
+		     SMT_ON
+		     SMT_AS_IS
+		    );
+my @enums_3411 = qw (
+		     LL_StepAsLimitHard64
+		     LL_StepAsLimitSoft64
+		     LL_StepNprocLimitHard64
+		     LL_StepNprocLimitSoft64
+		     LL_StepMemlockLimitHard64
+		     LL_StepMemlockLimitSoft64
+		     LL_StepLocksLimitHard64
+		     LL_StepLocksLimitSoft64
+		     LL_StepNofileLimitHard64
+		     LL_StepNofileLimitSoft64
+		     LL_NodeGetFirstResourceRequirement
+		     LL_NodeGetNextResourceRequirement
+		     LL_ClassGetFirstNodeResourceRequirement
+		     LL_ClassGetNextNodeResourceRequirement
+		     LL_ClassAsLimitHard
+		     LL_ClassAsLimitSoft
+		     LL_ClassNprocLimitHard
+		     LL_ClassNprocLimitSoft
+		     LL_ClassMemlockLimitHard
+		     LL_ClassMemlockLimitSoft
+		     LL_ClassLocksLimitHard
+		     LL_ClassLocksLimitSoft
+		     LL_ClassNofileLimitHard
+		     LL_ClassNofileLimitSoft
+		     LL_ReservationBgPartition
+		     LL_CONTROL_DUMP_LOGS
+		     RESOURCES
+		     NODE_RESOURCES
+		     RESERVATION_BY_HOSTFILE
+		    );
+
+my @enums_3421 = qw (
+		     QUERY_TOP_DOG
+		     QUEUE_SYS_PREEMPTED
+		     QUEUE_GLOBAL_WAIT
+		     LL_StepTaskAffinity
+		     LL_StepCpusPerCore
+		     LL_StepIsTopDog
+		     LL_StepConsideredAt
+		     LL_StepEstimatedStartTime
+		     LL_StepUserHoldTime
+		     LL_StepQueueId
+		     LL_StepQueueIndex
+		     LL_ClassExcludeBg
+		     LL_ClassIncludeBg
+		     LL_BgBPIONodeCount
+		     LL_BgPartitionUserList
+		     LL_BgPartitionIONodeCount
+		     LL_BgPartitionCnLoadImage
+		     LL_BgPartitionIoLoadImage
+		     LL_BgPartitionIONodeList
+		     LL_BgNodeCardSubDividedBusy
+		     LL_BgNodeCardIONodeCount
+		     LL_BgNodeCardGetFirstIONode
+		     LL_BgNodeCardGetNextIONode
+		     LL_BgIONodeId
+		     LL_BgIONodeIPAddr
+		     LL_BgIONodeCurrentPartition
+		     LL_BgIONodeCurrentPartitionState
+		     LL_BgPartitionBLRTSImage
+		    );
 
 our @EXPORT = (
 	       @function_defs,
@@ -1017,9 +1156,13 @@ our @EXPORT = (
 	       @enums_3301,
 	       @enums_3310,
 	       @enums_3311,
+               @enums_3401,
+               @enums_3404,
+               @enums_3411,
+               @enums_3421,
 	      );
 
-our $VERSION = '1.06';
+our $VERSION = '1.07';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -1079,7 +1222,19 @@ sub llctl
 	 $operation != LL_CONTROL_RESUME &&
 	 $operation != LL_CONTROL_RESUME_STARTD &&
 	 $operation != LL_CONTROL_RESUME_SCHEDD &&
-	 $operation != LL_CONTROL_START_DRAINED )
+	 $operation != LL_CONTROL_START_DRAINED &&
+	 $operation != LL_CONTROL_FAVOR_JOB &&
+	 $operation != LL_CONTROL_UNFAVOR_JOB &&
+	 $operation != LL_CONTROL_FAVOR_USER &&
+	 $operation != LL_CONTROL_UNFAVOR_USER &&
+	 $operation != LL_CONTROL_HOLD_USER &&
+	 $operation != LL_CONTROL_HOLD_SYSTEM &&
+	 $operation != LL_CONTROL_HOLD_RELEASE &&
+	 $operation != LL_CONTROL_PRIO_ABS &&
+	 $operation != LL_CONTROL_PRIO_ADJ &&
+	 $operation != LL_CONTROL_START_DRAINED &&
+	 $operation != LL_CONTROL_DUMP_LOGS
+       )
     {
 	croak "unrecognized option for llctl";
 	return undef;
