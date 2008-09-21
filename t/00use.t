@@ -1,6 +1,6 @@
 # Test if the module is loadable.
 
-use Test::More tests => 30 ;
+use Test::More tests => 37 ;
 
 
 my @function_defs = qw ( ll_version
@@ -33,6 +33,13 @@ my @function_defs = qw ( ll_version
                          llfavoruser
                          llhold
                          llprio
+			 ll_cluster
+			 ll_cluster_auth
+			 ll_fair_share
+                         ll_config_changed
+                         ll_read_config
+			 ll_move_job
+			 ll_move_spool
                        );
 
 use_ok( 'IBM::LoadLeveler', @function_defs);
@@ -66,4 +73,10 @@ can_ok( __PACKAGE__, 'llctl');
 can_ok( __PACKAGE__, 'llfavorjob');
 can_ok( __PACKAGE__, 'llhold');
 can_ok( __PACKAGE__, 'llprio');
-
+can_ok( __PACKAGE__, 'll_cluster');
+can_ok( __PACKAGE__, 'll_cluster_auth');
+can_ok( __PACKAGE__, 'll_fair_share');
+can_ok( __PACKAGE__, 'll_config_changed');
+can_ok( __PACKAGE__, 'll_read_config');
+can_ok( __PACKAGE__, 'll_move_job');
+can_ok( __PACKAGE__, 'll_move_spool');

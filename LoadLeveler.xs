@@ -2958,14 +2958,17 @@ ll_get_data(object,Specification)
 	    /*fprintf(stderr,"\nSPECIFICATION = %d\n",Specification);*/
 	    switch (defs[Specification])
 	    {
+	        case LL_NONE:
+		    XSRETURN_UNDEF;
+	        break;
 	        case LL_CHAR_STAR_STAR:
 		{
-		    char *pointer;
+		    char *pointer=NULL;
 		    int   rc;
 
 		    rc=ll_get_data(object,Specification,(void *)&pointer);
-		    /*fprintf(stderr,"%d = %s\n",Specification,pointer);*/
-		    if (rc >= 0)
+		    /* fprintf(stderr,"%d = %s\n",Specification,pointer); */
+		    if (rc >= 0 && pointer != NULL)
 		    {
 		        XPUSHs(sv_2mortal(newSVpv(pointer, 0)));
 			Safefree(pointer);
@@ -3078,7 +3081,7 @@ ll_get_data(object,Specification)
 	      {
 		  switch(Specification)
 		  {
-#if LLVER >= 3030100	    
+#if LLVER >= 3030100
 		      case LL_FairShareEntryNames:
 		      {
 		          /* char *** data type (array of strings) */
@@ -3169,126 +3172,85 @@ ll_get_data(object,Specification)
 	      break;
 	      case LL_INT_STAR_STAR:
 	      {
+		  int     ArraySize=-1;
+		  int     rc=-1;
+		  int	 *array;
+		  int	  i;
+
+		  /*
+		   * The int ** arrays all have a size, either fixed such as those for BG
+		   * or returned in an int value from some other call
+		   */
 		  switch (Specification)
 		  {
 		      case LL_MachinePoolList:
-		      {
-			    int    rc;
-			    int	 PoolSize;
-			    int	 *array;
-			    int	 i;
-
-			    /* First we need to get the Array size from the 
-			     *  LL_MachinePoolListSize
-			     */
-			    rc=ll_get_data(object,LL_MachinePoolListSize,(void *)&PoolSize);
-			    if ( rc >= 0 )
-			    {
-			        /*printf("MachinePoolListSize = %ld\n",PoolSize); */
-			        rc=ll_get_data(object,Specification,(void *)&array);
-				if ( rc >= 0 )
-				{
-				    for(i=0;i!=PoolSize;i++)
-				    {
-				        /*      	  printf("Pool %d = %ld\n",i,array[i]); */
-				        XPUSHs(sv_2mortal(newSViv((long)array[i])));
-				    }
-				    XSRETURN(PoolSize);
-				}
-			    }
-			    break;
-		      }
+			  rc=ll_get_data(object,LL_MachinePoolListSize,(void *)&ArraySize);
+			  break;
 #if LLVER >= 3020000
 		      case LL_AdapterWindowList:
-		      {
-
-			  int    rc;
-			  int	 count;
-			  int	 *array;
-			  int	 i;
-		      
-			  /* First we need to get the Array size from the 
-			   *  LL_AdapterTotalWindowCount
-			   */
-			  rc=ll_get_data(object,LL_AdapterTotalWindowCount,(void *)&count);
-			  if ( rc >= 0 )
-			  {
-			      /* printf("AdapterTotalWindowCount = %ld\n",count); */
-			    rc=ll_get_data(object,Specification,(void *)&array);
-			    if ( rc >= 0 )
-			    {
-			        for(i=0;i!=count;i++)
-				{
-				    /* printf("Adapter %d = %ld\n",i,array[i]); */
-				    XPUSHs(sv_2mortal(newSViv((long)array[i])));
-			        }
-				XSRETURN(count);
-			    }
-			  }
-		      }
-		      break;
+			  rc=ll_get_data(object,LL_AdapterTotalWindowCount,(void *)&ArraySize);			
+			  break;
+#endif 
+#if LLVER >= 3040001
+  		      case LL_BgPartitionShape:
+		      case LL_ReservationBgShape:
 #endif
 #if LLVER >= 3030100
 		      case LL_BgBPLocation:
+		      case LL_BgMachineBPSize:
 		      case LL_BgMachineSize:
-		      case LL_MachineUsedCPUList:
 		      case LL_StepBgShapeAllocated:
 		      case LL_StepBgShapeRequested:
-		      {
-
-			  int    rc;
-			  int    count;
-			  int    *array;
-			  int    i;
-		      
-			  count=3;
-			  rc=ll_get_data(object,Specification,(void *)&array);
-			  if ( rc >= 0 )
-			  {
-			      for(i=0;i!=count;i++)
-			      {
-				  /* printf("Specification %d %d = %ld\n",Specification,i,array[i]); */
-				  XPUSHs(sv_2mortal(newSViv((long)array[i])));
-			      }
-			      XSRETURN(count);
-			  }
-		      }
-		      break;
+			{
+			  rc=0;
+			  ArraySize=3;
+			}
+			break;
+#endif
+#if LLVER >= 3040001
+		      case LL_FairShareUsedBgShares:			
+#endif
+#if LLVER >= 3030100
 		      case LL_FairShareEntryTypes:
 		      case LL_FairShareAllocatedShares:
 		      case LL_FairShareUsedShares:
-		      {
-			  int    rc;
-			  int	 count;
-			  int	 *array;
-			  int	 i;
-		      
-			  /* First we need to get the Array size from the 
-			   *  LL_AdapterTotalWindowCount
-			   */
-			  rc=ll_get_data(object,LL_FairShareNumberOfEntries,(void *)&count);
-			  if ( rc >= 0 )
-			  {
-			      /* printf("AdapterTotalWindowCount = %ld\n",count); */
-			    rc=ll_get_data(object,Specification,(void *)&array);
-			    if ( rc >= 0 )
-			    {
-			        for(i=0;i!=count;i++)
-				{
-				    /* printf("Adapter %d = %ld\n",i,array[i]); */
-				    XPUSHs(sv_2mortal(newSViv((long)array[i])));
-			        }
-				XSRETURN(count);
-			    }
-			  }
-
-		      }
-		      break;
-#endif  
+			  rc=ll_get_data(object,LL_FairShareNumberOfEntries,(void *)&ArraySize);
+			  break;
+#endif
+		      case LL_MachineCPUList:
+			  rc=ll_get_data(object,LL_MachineCPUs,(void *)&ArraySize);
+			  break;
+		      case LL_MCMCPUList:
+			  rc=ll_get_data(object,LL_MCMCPUs,(void *)&ArraySize);
+			  break;
+		      case LL_MachineUsedCPUList:
+			  rc=ll_get_data(object,LL_MachineUsedCPUs,(void *)&ArraySize);
+		          break;
 		  }
+		  
+		  /* Return if we don't have a valid value in ArraySize */
+		  if (rc < 0  || ArraySize < 0)
+		  {
+		    XSRETURN_UNDEF;
+		  } 
+		  /*printf("MachinePoolListSize = %ld\n",PoolSize); */
+		  rc=ll_get_data(object,Specification,(void *)&array);
+		  if ( rc >= 0 )
+		  {
+		      /*fprintf(stderr,"Array Size = %d\n",ArraySize);*/
+		      for(i=0;i != ArraySize;i++)
+		      {
+			/* fprintf(stderr,"Value %d = %d\n",i,array[i]); */
+			XPUSHs(sv_2mortal(newSViv((long)array[i])));
+		      }
+		      free(array);
+		      XSRETURN(ArraySize);
+		  }
+		  else
+		    XSRETURN_UNDEF;
 	      }
-	      break;
-	      }
+	      break;	  
+	    }
 	}
 	    
 

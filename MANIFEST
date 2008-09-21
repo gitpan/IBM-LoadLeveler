@@ -38,9 +38,13 @@ examples/llqres
 examples/reservation
 t/00use.t
 t/01version.t
-t/02submit.t
-t/03data_access.t
-t/04int_types.t
-t/05config.t
+t/02query.t
+t/03submit.t
+t/04data_access.t
+t/05int_types.t
+t/06config.t
+ct/version.c
+ct/data_access.c
+ct/int_types.c
 typemap
 META.yml                                 Module meta-data (added by MakeMaker)

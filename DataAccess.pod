@@ -368,6 +368,8 @@ Returns from some query types may be, in C terms, enumerated types.  In perl the
 
 =back
 
+=over 4
+
 =item * ll_next_obj
 
 	$job=ll_next_obj($query);

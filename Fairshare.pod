@@ -40,8 +40,6 @@ B<Parameters>
         $savedir     A directory to be used for saving a snapshot of data, used by FAIR_SHARE_SAVE
         $savefile    A previously saved file of data, used by FAIR_SHARE_RESET
 
-=back
-
 =head1 SEE ALSO
 
 L<LoadLeveler>

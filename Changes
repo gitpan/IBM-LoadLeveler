@@ -1,5 +1,12 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+---   Sat Apr 19 13:05 2008
+        - Fixed a problem with LL_ClassPreemptClass call trying to free a NULL pointer 
+
+---   Mon Nov 19 21:55 2007
+        - Modified Makefile.PL to be more CPAN testers friendly
+        - Added query.t test file
+
 1.07  Fri Sep 21 13:30 2007
         - Added support for version 3.4.1.0 & 3.4.2.1
 	- Added Configuration API

@@ -27,10 +27,10 @@ while($classes)
     $class_inc_group=array2string(@class_inc_group);
     @class_admin=ll_get_data($classes,LL_ClassAdmin);
     $class_admin=array2string(@class_admin);
-    $class_nqs_class=ll_get_data($classes,LL_ClassNqsClass);
-    $class_nqs_submit=ll_get_data($classes,LL_ClassNqsSubmit);
-    @class_nqs_query=ll_get_data($classes,LL_ClassNqsQuery);
-    $class_nqs_query=array2string(@class_nqs_query);
+#    $class_nqs_class=ll_get_data($classes,LL_ClassNqsClass);
+#    $class_nqs_submit=ll_get_data($classes,LL_ClassNqsSubmit);
+#    @class_nqs_query=ll_get_data($classes,LL_ClassNqsQuery);
+#    $class_nqs_query=array2string(@class_nqs_query);
     $class_max_procs=ll_get_data($classes,LL_ClassMaxProcessors);
     $class_max_jobs=ll_get_data($classes,LL_ClassMaxJobs);
 
@@ -67,7 +67,7 @@ while($classes)
     $class_nice=ll_get_data($classes,LL_ClassNice);
     $class_free_slots=ll_get_data($classes,LL_ClassFreeSlots);
     $class_max_slots=ll_get_data($classes,LL_ClassMaximumSlots);
-    $class_exec_factor=ll_get_data($classes,LL_ClassExecutionFactor);
+#    $class_exec_factor=ll_get_data($classes,LL_ClassExecutionFactor);
     $class_max_total_tasks=ll_get_data($classes,LL_ClassMaxTotalTasks);
     $class_max_proto_inst=ll_get_data($classes,LL_ClassMaxProtocolInstances);
     $class_preempt_class=ll_get_data($classes,LL_ClassPreemptClass);

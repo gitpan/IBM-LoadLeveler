@@ -1134,7 +1134,6 @@ my @enums_3421 = qw (
 		     LL_BgIONodeIPAddr
 		     LL_BgIONodeCurrentPartition
 		     LL_BgIONodeCurrentPartitionState
-		     LL_BgPartitionBLRTSImage
 		    );
 
 our @EXPORT = (
@@ -1162,7 +1161,7 @@ our @EXPORT = (
                @enums_3421,
 	      );
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()

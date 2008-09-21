@@ -26,8 +26,13 @@ $id,$owner,$submit,$st,$pri,$class,$run
 .
 
 getopts("u:");
-
+if ( ! defined $opt_u )
+{
+	print "usage: llq_u -u user\n";
+	exit 0;
+}
 print "User = $opt_u\n";
+
 @user = ($opt_u, NULL);
 
 # Query Job information

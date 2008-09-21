@@ -1,9 +1,9 @@
+use 5.006;
 use ExtUtils::MakeMaker;
 
-# Find out if this is AIX or Linux
+my $LLVER="UNKNOWN";
 
-my $OS=`/bin/uname`;
-chomp $OS;
+$CC=$ExtUtils::MakeMaker::Config{"cc"};
 
 #
 # I hope this bit works out the base LoadLeveler version.
@@ -12,36 +12,33 @@ chomp $OS;
 # what it is, but i'm sure it must be a very good reason.
 #
 
-if ( $OS =~ "Linux" )
+if ( $^O eq "linux" )
 {
     $LoadL="/opt/ibmll/LoadL/full";
+    # Quit if no llapi.h file (for CPAN testers)
+    if ( ! -f "$LoadL/include/llapi.h")
+    {
+	print STDERR "Unable to find LoadLeveler include file\n";
+	exit 0;
+    }
     $ExtraLibs="-lstdc++"; # stops load failure with error undefined symbol: __gxx_personality_v0
 
-    my @packages=`/bin/rpm -qa`;
+    my $rpm = "";
+    $rpm = "/usr/bin/rpm" if -f "/usr/bin/rpm";
+    $rpm = "/bin/rpm"     if -f "/bin/rpm";
+    my @packages=`$rpm -qa`;
     foreach $package (@packages)
     {
 	next unless $package=~/LoadL.*-([\d.]+)-/;
 #	print "$package ----> $1\n";
 	$LLVER=$1;
     }
-    # Fudge to try and distingish between xlc and cc compilations of perl
-    my $cflags=$ExtUtils::MakeMaker::Config{"ccflags"};
-    my $cc=$ExtUtils::MakeMaker::Config{"cc"};
-    if ( $cc ne "cc" )
+    if ( ! $LLVER eq "UNKNOWN" )
     {
-	$CC=$cc;
+	print STDERR "Unable to extract LoadLeveler version\n";
+	exit 0;
     }
-    else
-    {
-	if ( $cflags =~ /GNU_SOURCE/ )
-	{
-	    $CC="gcc";
-	}
-	else
-	{
-	    $CC="xlc";
-	}
-    }
+
     # 64 bit required on PowerPC
     if ( ! defined $ExtUtils::MakeMaker::Config{"use64bitall"} && $ExtUtils::MakeMaker::Config{"archname"} =~ /ppc-linux/)
     {
@@ -49,11 +46,16 @@ if ( $OS =~ "Linux" )
 	print "This is probably going to end very badly. Sorry\n\n";
     }
 }
-elsif  ( $OS eq "AIX" )
+elsif  ( $^O eq "aix" )
 {
     $LoadL="/usr/lpp/LoadL/full";
+    # Quit if no llapi.h file (for CPAN testers)
+    if ( ! -f "$LoadL/include/llapi.h")
+    {
+	print STDERR "Unable to find LoadLeveler include file\n";
+	exit 0;
+    }
     $ExtraLibs="";
-    $CC=$ExtUtils::MakeMaker::Config{"cc"};
 
     #
     # The code extracts the package version using lslpp.
@@ -66,8 +68,11 @@ elsif  ( $OS eq "AIX" )
 }
 else
 {
-	print STDERR "Whoa, I don't recognise your OS ($OS), so I'm not going to build\n";
-	exit 1;
+    # Return a value that CPAN testers might like
+    # http://cpantest.grango.org/cgi-bin/pages.cgi?act=wiki-page&pagename=CPANAuthorNotes
+    print STDERR "OS unsupported\n";
+    print STDERR "LoadLevler is only supported on Linux and AIX. Found $OS\n";
+    exit 0;
 }
 
 
@@ -84,12 +89,12 @@ else
 # in the next number. See Page 155 of Camel V3. Alternativly just trust me that it works :)
 #
 
-1 while $LLVER=~s/\.(\d)\./.0\1./g;
-$LLVER=~s/\.(\d)$/.0\1/;
+1 while $LLVER=~s/\.(\d)\./.0$1./g;
+$LLVER=~s/\.(\d)$/.0$1/;
 $LLVER=~s/\.//g;
-$LLVER=~s/^0(\d+)/\1/;
+$LLVER=~s/^0(\d+)/$1/;
 
-print "Building for version $LLVER on $OS\n\n";
+print "Building for version $LLVER on $^O\n\n";
 
 process_defs();
 
@@ -102,7 +107,7 @@ WriteMakefile(
        AUTHOR           => 'Mike Hawkins <mike\@pink-pit.com>') : ()),
     'PM'                => { 'llapi.ph'        => '$(INST_LIBDIR)/llapi.ph',
 			     'LoadLeveler.pm'  => '$(INST_LIBDIR)/LoadLeveler.pm'
-			   },
+			   },		   
     'MAN3PODS'		=> { 'LoadLeveler.pod' => '$(INST_MAN3DIR)/LoadLeveler.$(MAN3EXT)',
 			     'DataAccess.pod'  => '$(INST_MAN3DIR)/LoadLeveler::DataAccess.$(MAN3EXT)',
 			     'Submit.pod'      => '$(INST_MAN3DIR)/LoadLeveler::Submit.$(MAN3EXT)',
@@ -113,12 +118,13 @@ WriteMakefile(
 			     'Fairshare.pod'   => '$(INST_MAN3DIR)/LoadLeveler::Fairshare.$(MAN3EXT)',
 			   },
     'LIBS'		=> ["-L$LoadL/lib -lllapi $ExtraLibs"], # e.g., '-lm'
-    'DEFINE'		=> "-DLLVER=$LLVER -L$LoadL/lib",
+    'DEFINE'		=> "-DLLVER=$LLVER",
     'INC'		=> "-I$LoadL/include",
     'OBJECT'		=> '$(O_FILES) ',
+    'MYEXTLIB'          => 'ct.a',  # Fake Library to con MakeMaker into building C tests
     'CC'                => $CC,
     'macro'		=> { LoadL => "$LoadL" },
-    'clean'             => { FILES => "llapi.ph" },
+    'clean'             => { FILES => "llapi.ph ct.a ct/version ct/data_access ct/int_types" },
 );
 sub MY::postamble {
     my $postamble = <<'END';
@@ -126,7 +132,7 @@ llapi.ph: $(LoadL)/include/llapi.h
 	( cd $(LoadL)/include ; h2ph -d /tmp llapi.h )
 	cat /tmp/llapi.ph | sed -e /require.*/d > $(INST_LIB)/../../llapi.ph
 	rm /tmp/llapi.ph
-html: LoadLeveler.pm DataAccess.pod
+html: LoadLeveler.pm DataAccess.pod Reservation.pod Submit.pod Query.pod Workload.pod Error.pod Fairshare.pod LoadLeveler.pod
 	pod2html --flush --noindex --podpath=. --htmlroot=. --outfile=DataAccess.html DataAccess.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Reservation.html Reservation.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Submit.html Submit.pod
@@ -135,6 +141,14 @@ html: LoadLeveler.pm DataAccess.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Error.html Error.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=Fairshare.html Fairshare.pod
 	pod2html --noindex --podpath=. --htmlroot=. --outfile=LoadLeveler.html LoadLeveler.pod
+ct.a:	ct/version ct/data_access ct/int_types
+	ar r ct.a	
+ct/version: ct/version.c
+	$(CC) -o $@ $(CCFLAGS) $(INC) $@.c $(EXTRALIBS) 	
+ct/data_access: ct/data_access.c
+	$(CC) -o $@ $(CCFLAGS) $(INC) $@.c $(EXTRALIBS) 	
+ct/int_types: ct/int_types.c
+	$(CC) -o $@ $(CCFLAGS) $(INC) $@.c $(EXTRALIBS) 	
 END
     $postamble;
 }
