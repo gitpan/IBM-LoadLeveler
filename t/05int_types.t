@@ -79,6 +79,8 @@ my $adapter = ll_get_data($mach, LL_MachineGetFirstAdapter);
 ok(defined $adapter,"Get the first adapter");
 SKIP:
 {
+
+	my $p_windows = 0;
 	skip('Unable to get an adapter',4) if ! defined $adapter;
 	while ( ! defined $adapter && ll_get_data($adapter, LL_AdapterTotalWindowCount) == 0 )
 	{
@@ -89,12 +91,11 @@ SKIP:
 	if ( defined $adapter )
 	{
 		$p_windows = ll_get_data($adapter, LL_AdapterTotalWindowCount);
-		
-		ok(defined $p_windows,"Get adapter window count");
-		ok($p_windows == $c_windows, "Compare C with Perl: adapter window count \($p_windows != $c_windows\)");
-	}
+	}	
+	skip('No adapters with windows',4) if ! defined $p_windows || $p_windows == 0;
+	ok(defined $p_windows,"Get adapter window count");
+	ok($p_windows == $c_windows, "Compare C with Perl: adapter window count \($p_windows != $c_windows\)");
 
-	skip('No adapters with windows',2) if ! defined $p_windows || $p_windows == 0;
 	if ( defined $p_windows )
 	{
     		@list = ll_get_data($adapter, LL_AdapterWindowList);

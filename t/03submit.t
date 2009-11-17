@@ -31,46 +31,48 @@ SKIP:
 {
     skip('ll_set_request to get classes failed',3) if $return != 0;
 
-   	$classes=ll_get_objs($query,LL_CM,NULL,$number,$err);
-	
+	my $number=0;
+	my $err=0;
+   	my $classes=ll_get_objs($query,LL_CM,NULL,$number,$err);
 	my $class_name="";
+	
 	
 	while($classes)
 	{	
-    	$class_name=ll_get_data($classes,LL_ClassName);
 		# Remove any classes that have users specified
 		
-		@class_exc_users=ll_get_data($classes,LL_ClassExcludeUsers);
+		my @class_exc_users=ll_get_data($classes,LL_ClassExcludeUsers);
 		if ($#class_exc_users > -1)
 		{
 		    	$classes=ll_next_obj($query);
 			next;
 		}
 	
-    	@class_inc_users=ll_get_data($classes,LL_ClassIncludeUsers);
+    		my @class_inc_users=ll_get_data($classes,LL_ClassIncludeUsers);
 		if ($#class_inc_users > -1)
 		{
 		    	$classes=ll_next_obj($query);
 			next;
 		}
 	
-    	@class_exc_group=ll_get_data($classes,LL_ClassExcludeGroups);
+    		my @class_exc_group=ll_get_data($classes,LL_ClassExcludeGroups);
 		if ($#class_exc_group > -1)
 		{
 		    	$classes=ll_next_obj($query);
 			next;
 		}
     
-		@class_inc_group=ll_get_data($classes,LL_ClassIncludeGroups);
+		my @class_inc_group=ll_get_data($classes,LL_ClassIncludeGroups);
 		if ($#class_inc_group > -1)
 		{
 		    	$classes=ll_next_obj($query);
 			next;
 		}
 		
+    		$class_name=ll_get_data($classes,LL_ClassName);
 		# Avoid anything that looks important
 		if (  $class_name =~ /high/     || $class_name =~ /priority/ || $class_name =~ /special/ ||
-		 	  $class_name =~ /parallel/ || $class_name =~ /large/
+		      $class_name =~ /parallel/ || $class_name =~ /large/
 		   )
 		{
 		    	$classes=ll_next_obj($query);
@@ -80,18 +82,18 @@ SKIP:
 		# Check Wall Clock and look for enough time to run our job
 
 	   	my $class_wcl_hlimit=ll_get_data($classes,LL_ClassWallClockLimitHard);
-    	my $class_wcl_slimit=ll_get_data($classes,LL_ClassWallClockLimitSoft);
+    		my $class_wcl_slimit=ll_get_data($classes,LL_ClassWallClockLimitSoft);
 	
 		if ( ($class_wcl_hlimit != -1 && $class_wcl_hlimit < ($runtime+60)) || 
 		     ($class_wcl_slimit != -1 && $class_wcl_slimit < ($runtime+60)) )
 		{
-	    	$classes=ll_next_obj($query);
+	    		$classes=ll_next_obj($query);
 			next;
 		}	
 		# Anything left that looks ordinary ?
 		
 		last if (  $class_name =~ /normal/ || $class_name =~ /small/ );
-    	$classes=ll_next_obj($query);
+    		$classes=ll_next_obj($query);
 	}
 	# Free up space allocated by LoadLeveler
 	ll_free_objs($query);

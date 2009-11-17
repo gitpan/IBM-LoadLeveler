@@ -49,3 +49,27 @@ L<perl>.
 IBM LoadLeveler for AIX 5L: Using and Administering
 
 =cut
+
+int  
+ll_fair_share(operation,dir,file)
+     int    operation
+     char  *dir
+     char  *file
+
+     CODE:
+     {
+	 LL_element          *errObj=NULL;
+         LL_fair_share_param  param;
+
+	 param.operation=operation;
+         param.savedir=dir;
+	 param.savedfile=file;
+
+	 RETVAL=ll_fair_share(LL_API_VERSION,&errObj,&param);
+	 if (RETVAL != API_OK )
+	 {
+	   sv_setiv(get_sv("IBM::LoadLeveler::errObj",FALSE),(IV)errObj);	   
+	 }
+     }
+     OUTPUT:
+         RETVAL

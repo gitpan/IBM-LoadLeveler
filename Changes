@@ -1,5 +1,28 @@
 Revision history for Perl extension IBM::LoadLeveler.
 
+1.09  Tue Nov 17 22:20 2009
+        - Minor documentation tweeks
+
+---   Mon Nov 02 22:45 2009
+        - Updated for 3.5.1.2
+	- Added new code to find LoadLeveler version
+	- removed some unused variables and properly discarded hv_store returns
+
+---   Sun Jan 19 18:12 2009
+	- Update for 3.5 support:
+	- ll_bind -- binding_method
+	- ll_modify
+	- ll_make_reservation -- expiration & recurrence
+	- Fixed problem building defs.h caused by Unused entries
+	
+---   Tue Oct 28 22:05 2008
+	- Added extra parameters for ll_modify
+
+1.08  Sun Sep 21 08:53 2008
+        - Added C tests to use for comparison with Perl
+        - Re-wrote int array code to fix various problems
+        - Modified Makefile.PL OS detection and C compiler choices
+
 ---   Sat Apr 19 13:05 2008
         - Fixed a problem with LL_ClassPreemptClass call trying to free a NULL pointer 
 

@@ -90,28 +90,34 @@ The Data Access API has the following functions:
 
 =back
 
-=over 4
-
-=item * ll_query
+=head2 ll_query
 
 	$query = ll_query( JOBS | MACHINES | CLUSTER | WLMSTAT | MATRIX | CLASSES | RESERVATIONS | MCLUSTERS | BLUE_GENE | FAIRSHARE);
 
 ll_query is the first call you make to access the API it establishes the type of information you receive.
 
-Note: CLASSES query is only available in version LoadLeveler 3.2 and above.
-      RESERVATIONS requires LoadLeveler 3.3+
-      MCLUSTERS & BLUE_GENE require LoadLeveler 3.3.1+
-      FAIRSHARE requires LoadLeveler 3.3.2+
+Note: 
 
-=item * ll_set_request
+=over 4
+
+=item *	CLASSES query is only available in version LoadLeveler 3.2 and above.
+
+=item * RESERVATIONS requires LoadLeveler 3.3+
+
+=item * MCLUSTERS & BLUE_GENE require LoadLeveler 3.3.1+
+
+=item * FAIRSHARE requires LoadLeveler 3.3.2+
+
+=back
+
+=head2 ll_set_request
 
 	$return=ll_set_request($query,$QueryFlags,$ObjectFilter, $DataFilter);
 
 ll_set_request is used to determine the range of data returned by ll_get_objs.
 
 
-B<Parameters>
-
+=head3 Parameters
 
 =over 4
 
@@ -192,21 +198,22 @@ They can be used with the following query types:
 
 Specifies the search criteria:
 
-	Query Flag	Filter
+	Query Flag	Filter Description
 	---------------------------------------
-	QUERY_ALL	undef
-	QUERY_JOBID	Array reference of job IDs eg ["host.jobid1", "host.jobid2"]
-	QUERY_STEPID	Array reference of step IDs eg ["host.jobid.stepid"]
-	QUERY_USER	Array reference of user IDs eg ["mike", "mark", "mary"]
-	QUERY_CLASS     Array reference of LoadLeveler class names.
-	QUERY_GROUP	Array reference of LoadLeveler group names.
-	QUERY_HOST	Array reference of LoadLeveler host names.
-	QUERY_STARTDATE or QUERY_ENDDATE two start dates or two end dates having the format MM/DD/YYYY eg ["01/14/2003", "02/23/2003"].
-	QUERY_PROCID	Array reference containing a single process id terminated by a NULL string eg ["procid",NULL].
+	QUERY_ALL		undef
+	QUERY_JOBID		Array reference of job IDs eg ["host.jobid1", "host.jobid2"]
+	QUERY_STEPID		Array reference of step IDs eg ["host.jobid.stepid"]
+	QUERY_USER		Array reference of user IDs eg ["mike", "mark", "mary"]
+	QUERY_CLASS		Array reference of LoadLeveler class names.
+	QUERY_GROUP		Array reference of LoadLeveler group names.
+	QUERY_HOST		Array reference of LoadLeveler host names.
+	QUERY_STARTDATE or QUERY_ENDDATE	two start dates or two end dates having the format MM/DD/YYYY eg ["01/14/2003", "02/23/2003"].
+	QUERY_PROCID		Array reference containing a single process id terminated by a NULL string eg ["procid",NULL].
 	QUERY_RESERVATION_ID	Array reference containing a list of reervation IDs.
-        QUERY_BG_BASE_PARTITION Array reference of base partition IDs. For all base partitions, the first entry in the list must contain the string "all"
-        QUERY_BG_PARTITION Array reference of partition IDs. For all base partitions, the first entry in the list must contain the string "all"
-        QUERY_TOP_DOG    Array reference of job steps
+	QUERY_BG_BASE_PARTITION	Array reference of base partition IDs. For all base partitions, the first entry in the list must contain the string "all"
+	QUERY_BG_PARTITION	Array reference of partition IDs. For all base partitions, the first entry in the list must contain the string "all"
+	QUERY_TOP_DOG		Array reference of job step
+
 =over 4
 
 =item NOTE:
@@ -235,20 +242,20 @@ Valid only for a MACHINES query, returns the same data as B<llstatus -f>
 
 =back
 
-=item * ll_reset_request
+=head2 ll_reset_request
 
 
 	$return=ll_reset_request($query);
 
 This is used to reset the request (surprise!) associated with a query object, you use it if you want to do another L<ll_set_request> using different parameters.
 
-=item * ll_get_objs
+=head2 ll_get_objs
 
 	$data=ll_get_objs($query,$query_daemon,$host,$number,$err);
 
 Sends a query request to LoadLeveler
 
-B<Parameters>
+=head3 Parameters
 
 =over 4
 
@@ -325,7 +332,7 @@ If there is an error this is it. Possible values are:
 
 =back
 
-=item * ll_get_data
+=head2 ll_get_data
 
 	$data=ll_get_data($element,$specification);
 
@@ -338,7 +345,7 @@ This call differs from the IBM documentation, the data you request is returned a
 To know what you are getting you really need to know about the LoadLeveler Job Object Model.  All of this is in the I<IBM LoadLeveler for AIX 5L: Using and Administering> book and html. Sorry for not including it here, but there is an awful lot of it.
 
 
-B<enum types>
+-head3 enum types
 
 Returns from some query types may be, in C terms, enumerated types.  In perl these all return as SCALAR Integers.  Return values are shown below:
 
@@ -368,39 +375,33 @@ Returns from some query types may be, in C terms, enumerated types.  In perl the
 
 =back
 
-=over 4
-
-=item * ll_next_obj
+=head2 ll_next_obj
 
 	$job=ll_next_obj($query);
 
 This returns the next object from the query object.
 
-=item * ll_free_objs
+=head2 ll_free_objs
 
 	$return=ll_free_objs($query);
 
 This frees up the the space taken by the ll_get_objs routine for the LoadLeveler Data.  Since there is probably an awful lot of this this is a very important call.
 
-=item * ll_deallocate
+=head2 ll_deallocate
 
 	$return=ll_deallocate($query);
 
 Frees the query object itself, this is the last LoadLeveler action.
 
-=back
-
 =head2 LL_MachinePoolList & LL_AdapterWindowList
 
 These two requests are supposed to return integer arrays.  In this module they will return lists.
-
 
 =over 4
 
 =item * LL_MachinePoolList
 
 This will return a list with LL_MachinePoolListSize elements in it.
-
 
 =item * LL_AdapterWindowList
 
@@ -423,4 +424,3 @@ L<LoadLeveler> L<perl>.
 IBM LoadLeveler for AIX 5L: Using and Administering
 
 =cut
-

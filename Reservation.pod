@@ -17,6 +17,8 @@ IBM::LoadLeveler Reservation API
 
   $result = ll_remove_reservation(\@IDs,\@user_list,\@host_list,\@group_list)
 
+  $result = ll_remove_reservation_xtnd(\@IDs,\@user_list,\@group_list,\@host_list,\@base_partition_list,$begin,$end)
+
 =head1 DESCRIPTION
 
 The Reservation API has the following functions:
@@ -31,11 +33,11 @@ The Reservation API has the following functions:
 
 =item ll_remove_reservation
 
+=item ll_remove_reservation_xtnd
+
 =back
 
 This API is only available for LoadLeveler versions 3.3.0.0 and higher.
-
-B<NOTE:> I do not like the way errors are being returned by these calls and I might well change the way they are handled in a future release, sorry.
 
 =over 4
 
@@ -48,12 +50,12 @@ Surprise! This function allows you to create a LoadLeveler reservation.  The typ
 
 	Reservation Data Type		How the nodes are reserved	 Perl variable
 	--------------------------------------------------------------------------------
-	RESERVATION_BY_NODE		By number of nodes		 $integer
+	RESERVATION_BY_NODE		    By number of nodes		 $integer
 	RESERVATION_BY_HOSTLIST		By specifying a host list	 \@hosts
 	RESERVATION_BY_JOBSTEP		By specifying a job step	 $jobstep
-	RESERVATION_BY_JCF		By specifying a job command file $jcf
-        RESERVATION_BY_BG_CNODE         By number of Blue Gene c-nodes   $integer
-        RESERVATION_BY_HOSTFILE         By specifying a host file        $string
+	RESERVATION_BY_JCF		    By specifying a job command file $jcf
+    RESERVATION_BY_BG_CNODE     By number of Blue Gene c-nodes   $integer
+    RESERVATION_BY_HOSTFILE     By specifying a host file        $string
 
 
 If $resid is not undef then it is a string containing the reservation ID.
@@ -119,6 +121,14 @@ If $result != 0 then $error contains an error object that may be passed to ll_er
 	$result = ll_remove_reservation(\@IDs,\@user_list,\@host_list,\@group_list)
 
 This function allows you to cancel one or more reservations.
+
+If $result != 0 then $error contains an error object that may be passed to ll_error
+
+=item ll_remove_reservation_xtnd
+
+        $result = ll_remove_reservation_xtnd(\@IDs,\@user_list,\@group_list,\@host_list,\@base_partition_list,$begin,$end)
+
+This function allows you to cancel one or more reservations and is only available in version 3.5 or higher, it should be used in preference to ll_remove_reservation.
 
 If $result != 0 then $error contains an error object that may be passed to ll_error
 

@@ -40,6 +40,7 @@ my @function_defs = qw ( ll_version
 			 ll_change_reservation
 			 ll_bind
 			 ll_remove_reservation
+			 ll_remove_reservation_xtnd
 			 llsubmit
 			 ll_control
 			 ll_modify
@@ -57,8 +58,8 @@ my @function_defs = qw ( ll_version
 			 ll_cluster
 			 ll_cluster_auth
 			 ll_fair_share
-                         ll_config_changed
-                         ll_read_config
+             ll_config_changed
+             ll_read_config
 			 ll_move_job
 			 ll_move_spool
 		       );
@@ -721,6 +722,7 @@ my @enums_3300 = qw (
 		     RESERVATIONS
 		     MCLUSTERS
 		     QUERY_RESERVATION_ID
+		     RESERVATION_OK
 		     QUERY_LOCAL
 		     LL_JobSchedd
 		     LL_JobJobQueueKey
@@ -829,6 +831,17 @@ my @enums_3300 = qw (
 		     RESERVATION_MODE_REMOVE_ON_IDLE
 		     RESERVATION_OWNER
 		     RESERVATION_GROUP
+		 	 RESERVATION_WAITING	
+			 RESERVATION_SETUP
+			 RESERVATION_ACTIVE
+			 RESERVATION_ACTIVE_SHARED
+			 RESERVATION_CANCEL
+			 RESERVATION_COMPLETE
+			 RESERVATION_DEFAULT_MODE
+			 RESERVATION_SHARED
+			 RESERVATION_REMOVE_ON_IDLE
+			 RESERVATION_BIND_FIRM
+			 RESERVATION_BIND_SOFT
 		    );
 my @enums_3301 = qw (
 		     LL_ClusterEnforceMemory
@@ -1136,6 +1149,69 @@ my @enums_3421 = qw (
 		     LL_BgIONodeCurrentPartitionState
 		    );
 
+my @enums_3500 = qw (
+			LL_StepClusterOption
+			LL_StepScaleAcrossClusterCount
+			LL_StepGetFirstScaleAcrossCluster
+			LL_StepGetNextScaleAcrossCluster
+			LL_StepBgPartitionType
+			LL_MachineRSetSupport
+			LL_MachineSMTState
+			LL_ClusterScaleAcrossEnv
+			LL_WlmStatVMemoryHighWater
+			LL_WlmStatVMemorySnapshotUsage
+			LL_WlmStatLargePageMemorySnapshotUsage
+			LL_ClassAllowScaleAcrossJobs
+			LL_ClassGetFirstMaxResourceRequirement
+			LL_ClassGetNextMaxResourceRequirement
+			LL_ClassGetFirstMaxNodeResourceRequirement
+			LL_ClassGetNextMaxNodeResourceRequirement
+			LL_ClassStripingWithMinimumNetworks
+			LL_ClassMaxNode
+			LL_ReservationExpiration
+			LL_ReservationCanceledOccurrences
+			LL_ReservationCanceledOccurrencesCount
+			LL_ReservationRecurringString
+			LL_ReservationRecurrenceStructure
+			LL_ReservationBindingMethod
+			LL_ReservationGetNextOccurrence
+			LL_ReservationOccurrenceID
+			LL_StepReservationBindingMethod
+			LL_StepReservationFirstOidStepBoundTo
+			LL_MClusterAllowScaleAcrossJobs
+			LL_MClusterMainScaleAcrossCluster
+			LL_BgPartitionType
+			CLUSTER_OPTION
+			DSTG_RESOURCES
+			BG_PARTITION_TYPE
+			BG_USER_LIST
+			JOBMGMT_JOB_PREEMPTED
+			RESERVATION_BIND_FIRM
+			RESERVATION_BIND_SOFT
+			RESERVATION_BINDING_METHOD
+			RESERVATION_EXPIRATION
+			RESERVATION_RECURRENCE
+			RESERVATION_OCCURRENCE
+			BG_BP_SOME_DOWN
+			HPC
+			HTC_SMP
+			HTC_DUAL
+			HTC_VN
+			HTC_LINUX_SMP
+			PTYPE_NAV
+			MCM_AFFINITY
+			USER_DEFINED_RSET
+			NO_AFFINITY
+			SMT_DISABLED
+			SMT_ENABLED
+			SMT_NOT_SUPPORT
+			);
+			
+my @enums_3512 = qw (
+			LL_ReservationRecurrenceString
+			LL_ReservationJobOids
+		    );			
+
 our @EXPORT = (
 	       @function_defs,
 	       @enums_3100,
@@ -1155,13 +1231,15 @@ our @EXPORT = (
 	       @enums_3301,
 	       @enums_3310,
 	       @enums_3311,
-               @enums_3401,
-               @enums_3404,
-               @enums_3411,
-               @enums_3421,
+           @enums_3401,
+           @enums_3404,
+           @enums_3411,
+           @enums_3421,
+		   @enums_3500,
+		   @enums_3512
 	      );
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -1173,24 +1251,29 @@ sub AUTOLOAD {
     ($constname = $AUTOLOAD) =~ s/.*:://;
     croak "& not defined" if $constname eq 'constant';
     my $val = constant($constname, @_ ? $_[0] : 0);
-    if ($! != 0) {
-	if ($! =~ /Invalid/ || $!{EINVAL}) {
-	    $AutoLoader::AUTOLOAD = $AUTOLOAD;
-	    goto &AutoLoader::AUTOLOAD;
-	}
-	else {
-	    croak "Your vendor has not defined LoadLeveler macro $constname";
-	}
+    if ($! != 0) 
+	{	
+		if ($! =~ /Invalid/ || $!{EINVAL}) 
+		{
+	    	$AutoLoader::AUTOLOAD = $AUTOLOAD;
+	    	goto &AutoLoader::AUTOLOAD;
+		}
+		else 
+		{
+		    croak "Your vendor has not defined LoadLeveler macro $constname";
+		}
     }
     {
-	no strict 'refs';
-	# Fixed between 5.005_53 and 5.005_61
-	if ($] >= 5.00561) {
-	    *$AUTOLOAD = sub () { $val };
-	}
-	else {
-	    *$AUTOLOAD = sub { $val };
-	}
+		no strict 'refs';
+		# Fixed between 5.005_53 and 5.005_61
+		if ($] >= 5.00561) 
+		{
+		    *$AUTOLOAD = sub () { $val };
+		}
+		else 
+		{
+		    *$AUTOLOAD = sub { $val };
+		}
     }
     goto &$AUTOLOAD;
 }
@@ -1201,46 +1284,46 @@ bootstrap IBM::LoadLeveler $VERSION;
 
 # Autoload methods go after =cut, and are processed by the autosplit program.
 
-1;
-__END__
 
 sub llctl
 {
-    my ($operation,$class_list_ref,$host_list_ref)=@_;
+    my $operation      = shift;
+	my $class_list_ref = shift;
+	my $host_list_ref  = shift;
 
-    if ( $operation != LL_CONTROL_START &&
-	 $operation != LL_CONTROL_STOP &&
-	 $operation != LL_CONTROL_RECYCLE &&
-	 $operation != LL_CONTROL_RECONFIG &&
-	 $operation != LL_CONTROL_DRAIN &&
-	 $operation != LL_CONTROL_DRAIN_SCHEDD &&
-	 $operation != LL_CONTROL_DRAIN_STARTD &&
-	 $operation != LL_CONTROL_FLUSH &&
-	 $operation != LL_CONTROL_PURGE_SCHEDD &&
-	 $operation != LL_CONTROL_SUSPEND &&
-	 $operation != LL_CONTROL_RESUME &&
-	 $operation != LL_CONTROL_RESUME_STARTD &&
-	 $operation != LL_CONTROL_RESUME_SCHEDD &&
-	 $operation != LL_CONTROL_START_DRAINED &&
-	 $operation != LL_CONTROL_FAVOR_JOB &&
-	 $operation != LL_CONTROL_UNFAVOR_JOB &&
-	 $operation != LL_CONTROL_FAVOR_USER &&
-	 $operation != LL_CONTROL_UNFAVOR_USER &&
-	 $operation != LL_CONTROL_HOLD_USER &&
-	 $operation != LL_CONTROL_HOLD_SYSTEM &&
-	 $operation != LL_CONTROL_HOLD_RELEASE &&
-	 $operation != LL_CONTROL_PRIO_ABS &&
-	 $operation != LL_CONTROL_PRIO_ADJ &&
-	 $operation != LL_CONTROL_START_DRAINED &&
-	 $operation != LL_CONTROL_DUMP_LOGS
+    if ( $operation != \&LL_CONTROL_START &&
+	 	 $operation != \&LL_CONTROL_STOP &&
+	 	 $operation != \&LL_CONTROL_RECYCLE &&
+	 	 $operation != \&LL_CONTROL_RECONFIG &&
+		 $operation != \&LL_CONTROL_DRAIN &&
+		 $operation != \&LL_CONTROL_DRAIN_SCHEDD &&
+		 $operation != \&LL_CONTROL_DRAIN_STARTD &&
+		 $operation != \&LL_CONTROL_FLUSH &&
+		 $operation != \&LL_CONTROL_PURGE_SCHEDD &&
+		 $operation != \&LL_CONTROL_SUSPEND &&
+		 $operation != \&LL_CONTROL_RESUME &&
+		 $operation != \&LL_CONTROL_RESUME_STARTD &&
+		 $operation != \&LL_CONTROL_RESUME_SCHEDD &&
+		 $operation != \&LL_CONTROL_START_DRAINED &&
+		 $operation != \&LL_CONTROL_FAVOR_JOB &&
+		 $operation != \&LL_CONTROL_UNFAVOR_JOB &&
+		 $operation != \&LL_CONTROL_FAVOR_USER &&
+		 $operation != \&LL_CONTROL_UNFAVOR_USER &&
+		 $operation != \&LL_CONTROL_HOLD_USER &&
+		 $operation != \&LL_CONTROL_HOLD_SYSTEM &&
+		 $operation != \&LL_CONTROL_HOLD_RELEASE &&
+		 $operation != \&LL_CONTROL_PRIO_ABS &&
+		 $operation != \&LL_CONTROL_PRIO_ADJ &&
+		 $operation != \&LL_CONTROL_START_DRAINED &&
+		 $operation != \&LL_CONTROL_DUMP_LOGS
        )
     {
-	croak "unrecognized option for llctl";
-	return undef;
+		croak "unrecognized option for llctl";
+		return undef;
     }
     else
     {
-	return ll_control($operation,$host_list_ref,undef,undef,$host_list_ref,0);
+		return ll_control($operation,$host_list_ref,undef,undef,$class_list_ref,0);
     }
 }
 
@@ -1248,30 +1331,30 @@ sub llfavorjob
 {
     my ($operation,$job_list_ref)=@_;
 
-    if ( $operation != LL_CONTROL_FAVOR_JOB &&
-	 $operation != LL_CONTROL_UNFAVOR_JOB)
+    if ( $operation != \&LL_CONTROL_FAVOR_JOB &&
+	     $operation != \&LL_CONTROL_UNFAVOR_JOB)
     {
-	croak "unrecognized option for llfavorjob";
-	return undef;
+		croak "unrecognized option for llfavorjob";
+		return undef;
     }
     else
     {
-	return ll_control($operation,undef,undef,$job_list_ref,undef,0);
+		return ll_control($operation,undef,undef,$job_list_ref,undef,0);
     }
 }
 sub llfavoruser
 {
     my ($operation,$user_list_ref)=@_;
 
-    if ( $operation != LL_CONTROL_FAVOR_USER &&
-	 $operation != LL_CONTROL_UNFAVOR_USER)
+    if ( $operation != \&LL_CONTROL_FAVOR_USER &&
+	     $operation != \&LL_CONTROL_UNFAVOR_USER)
     {
-	croak "unrecognized option for llfavorjob";
-	return undef;
+		croak "unrecognized option for llfavorjob";
+		return undef;
     }
     else
     {
-	return ll_control($operation,undef,$user_list_ref,undef,undef,0);
+		return ll_control($operation,undef,$user_list_ref,undef,undef,0);
     }
 }
 
@@ -1279,16 +1362,16 @@ sub llhold
 {
     my ($operation, $host_list_ref, $user_list_ref, $job_list_ref) = @_;
 
-    if ( $operation != LL_CONTROL_HOLD_USER &&
-	 $operation != LL_CONTROL_HOLD_SYSTEM &&
-	 $operation != LL_CONTROL_HOLD_RELEASE )
+    if ( $operation != \&LL_CONTROL_HOLD_USER &&
+	     $operation != \&LL_CONTROL_HOLD_SYSTEM &&
+	     $operation != \&LL_CONTROL_HOLD_RELEASE )
     {
-	croak "unrecognized option for llhold";
-	return undef;
+		croak "unrecognized option for llhold";
+		return undef;
     }
     else
     {
-	return ll_control($operation,$host_list_ref,$user_list_ref,$job_list_ref,undef,0);
+		return ll_control($operation,$host_list_ref,$user_list_ref,$job_list_ref,undef,0);
     }
 }
 
@@ -1296,14 +1379,17 @@ sub llprio
 {
     my ($operation,$job_list_ref,$priority)=@_;
 
-    if ( $operation != LL_CONTROL_PRIO_ABS &&
-	 $operation != LL_CONTROL_PRIO_ADJ )
+    if ( $operation != \&LL_CONTROL_PRIO_ABS &&
+	     $operation != \&LL_CONTROL_PRIO_ADJ )
     {
-	croak "unrecognized option for llprio";
-	return undef;
+		croak "unrecognized option for llprio";
+		return undef;
     }
     else
     {
-	return ll_control($operation,undef,undef,$job_list_ref,undef,$priority);
+		return ll_control($operation,undef,undef,$job_list_ref,undef,$priority);
     }
 }
+
+1;
+__END__
